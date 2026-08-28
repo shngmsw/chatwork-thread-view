@@ -4,6 +4,17 @@ export const HIGHLIGHT_CLASS = 'ctv-flash-highlight';
 const HIGHLIGHT_STYLE_ID = 'ctv-highlight-style';
 const HIGHLIGHT_MS = 1500;
 
+// 強調は常に 1 件だけ。連続ジャンプでタイマーが積み上がると、
+// 古いタイマーが新しい強調を早期に消したり、複数が同時に光ったりする。
+let pending = null;
+
+function clearPendingHighlight() {
+  if (!pending) return;
+  clearTimeout(pending.timer);
+  pending.node.classList.remove(HIGHLIGHT_CLASS);
+  pending = null;
+}
+
 // 強調対象は Shadow DOM の外 (Chatwork 本体の DOM) なので
 // document.head に最小限のスタイルを 1 つだけ注入する。
 function ensureHighlightStyle() {
@@ -38,10 +49,15 @@ export function jumpToMessage(messageId) {
 
   target.scrollIntoView({ block: 'center', behavior: 'smooth' });
 
+  clearPendingHighlight();
   target.classList.add(HIGHLIGHT_CLASS);
-  setTimeout(() => {
-    target.classList.remove(HIGHLIGHT_CLASS);
-  }, HIGHLIGHT_MS);
+  pending = {
+    node: target,
+    timer: setTimeout(() => {
+      pending = null;
+      target.classList.remove(HIGHLIGHT_CLASS);
+    }, HIGHLIGHT_MS),
+  };
 
   return true;
 }

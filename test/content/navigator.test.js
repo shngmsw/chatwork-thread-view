@@ -7,6 +7,7 @@ beforeEach(() => {
   document.body.innerHTML = `
     <div id="_timeLine">
       <div class="_message" data-mid="123" id="_messageId123"></div>
+      <div class="_message" data-mid="456" id="_messageId456"></div>
     </div>
   `;
   Element.prototype.scrollIntoView = vi.fn();
@@ -47,5 +48,28 @@ describe('jumpToMessage', () => {
 
   it('数値以外の ID では false を返す', () => {
     expect(jumpToMessage('"]><script>')).toBe(false);
+  });
+
+  it('別のメッセージへ続けてジャンプすると強調は 1 件だけになる', () => {
+    jumpToMessage('123');
+    jumpToMessage('456');
+
+    expect(document.querySelectorAll(`.${HIGHLIGHT_CLASS}`)).toHaveLength(1);
+    expect(document.getElementById('_messageId456').classList.contains(HIGHLIGHT_CLASS)).toBe(true);
+    expect(document.getElementById('_messageId123').classList.contains(HIGHLIGHT_CLASS)).toBe(false);
+  });
+
+  it('同じメッセージへ再ジャンプすると強調時間が測り直される', () => {
+    const target = document.getElementById('_messageId123');
+    jumpToMessage('123');
+    vi.advanceTimersByTime(1000);
+    jumpToMessage('123');
+
+    // 1 回目のタイマーが残っていると、ここ (1 回目から 1600ms) で消えてしまう。
+    vi.advanceTimersByTime(600);
+    expect(target.classList.contains(HIGHLIGHT_CLASS)).toBe(true);
+
+    vi.advanceTimersByTime(1000);
+    expect(target.classList.contains(HIGHLIGHT_CLASS)).toBe(false);
   });
 });
