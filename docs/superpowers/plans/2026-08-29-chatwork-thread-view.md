@@ -433,7 +433,7 @@ function assignDepthAndSort(node, depth) {
 - [ ] **Step 7: テストが通ることを確認する**
 
 Run: `npm test`
-Expected: PASS — 11 tests passed
+Expected: PASS — 12 tests passed
 
 - [ ] **Step 8: コミット** (git を使う場合のみ)
 
@@ -856,7 +856,7 @@ export function parseTimeline(elements, ctx = createScrapeContext()) {
 - [ ] **Step 6: テストが通ることを確認する**
 
 Run: `npm test`
-Expected: PASS — 全 23 tests passed (Task 1 の 11 件 + 本タスクの 12 件)
+Expected: PASS — 全 24 tests passed (Task 1 の 12 件 + 本タスクの 12 件)
 
 - [ ] **Step 7: コミット** (git を使う場合のみ)
 
@@ -1237,7 +1237,7 @@ Expected:
 - [ ] **Step 8: ユニットテストが壊れていないことを確認する**
 
 Run: `npm test`
-Expected: PASS — 23 tests passed (このタスクはテストを追加しない)
+Expected: PASS — 24 tests passed (このタスクはテストを追加しない)
 
 - [ ] **Step 9: コミット** (git を使う場合のみ)
 
@@ -1490,7 +1490,7 @@ export function renderThreads(container, threads, options) {
 - [ ] **Step 4: テストが通ることを確認する**
 
 Run: `npm test`
-Expected: PASS — 31 tests passed
+Expected: PASS — 32 tests passed
 
 - [ ] **Step 5: スレッドカードのスタイルを styles.js に追記する**
 
@@ -1787,7 +1787,7 @@ export function startObserver(options) {
 - [ ] **Step 4: テストが通ることを確認する**
 
 Run: `npm test`
-Expected: PASS — 36 tests passed
+Expected: PASS — 37 tests passed
 
 - [ ] **Step 5: main.js を observer に切り替える**
 
@@ -1990,7 +1990,7 @@ export function jumpToMessage(messageId) {
 - [ ] **Step 4: テストが通ることを確認する**
 
 Run: `npm test`
-Expected: PASS — 41 tests passed
+Expected: PASS — 42 tests passed
 
 - [ ] **Step 5: main.js を配線し、未ロード時の案内を出す**
 
@@ -2137,7 +2137,7 @@ export function runHealthCheck(messages, doc = document) {
 - [ ] **Step 4: テストが通ることを確認する**
 
 Run: `npm test`
-Expected: PASS — 45 tests passed
+Expected: PASS — 46 tests passed
 
 - [ ] **Step 5: パネルに返信ゼロ切替を追加する**
 
@@ -2365,7 +2365,7 @@ Chatwork DOM への依存は `src/content/selectors.js` にのみ存在します
 - [ ] **Step 9: 全テストが通ることを確認する**
 
 Run: `npm test`
-Expected: PASS — 45 tests passed
+Expected: PASS — 46 tests passed
 
 - [ ] **Step 10: 実機での総合検証**
 
@@ -2395,7 +2395,7 @@ git commit -m "feat: 健全性チェック・表示切替・README を追加し�
 
 ## 完成時の状態
 
-- `npm test` が 45 件パスする
+- `npm test` が 46 件パスする
 - `chrome://extensions` から読み込むと Chatwork でスレッドパネルが動作する
 - ネットワーク通信コードと認証情報の取り扱いがゼロ
 - Chatwork DOM への依存が `src/content/selectors.js` 1 ファイルに閉じている
