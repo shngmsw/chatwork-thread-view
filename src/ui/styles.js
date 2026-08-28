@@ -1,0 +1,65 @@
+export const PANEL_CSS = `
+:host {
+  all: initial;
+  display: block;
+  height: 100%;
+}
+* { box-sizing: border-box; }
+.panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-left: 1px solid #d2dcdc;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.08);
+  font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #101819;
+}
+.panel__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #d2dcdc;
+  background: #f4f7f7;
+  flex: 0 0 auto;
+}
+.panel__title { font-weight: 700; font-size: 13px; }
+.panel__count { color: #5b6e70; font-size: 12px; }
+.panel__spacer { flex: 1 1 auto; }
+.panel__btn {
+  border: 1px solid #d2dcdc;
+  background: #ffffff;
+  color: #33474a;
+  border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+}
+.panel__btn:hover { background: #edf1f1; }
+.panel__btn:focus-visible { outline: 2px solid #0c6b6b; outline-offset: 1px; }
+.panel__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px;
+}
+.panel__grip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+}
+.panel__grip:hover { background: rgba(12, 107, 107, 0.18); }
+.state {
+  color: #5b6e70;
+  font-size: 12px;
+  padding: 16px 8px;
+  text-align: center;
+}
+.state--error { color: #8a5a0b; text-align: left; }
+`;
