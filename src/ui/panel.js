@@ -96,9 +96,9 @@ export function createPanel() {
     document.documentElement.style.setProperty('--ctv-w', `${width}px`);
   }
 
-  function setOpen(open) {
+  function setOpen(open, persist = true) {
     document.documentElement.classList.toggle(OPEN_CLASS, open);
-    saveSettings({ open });
+    if (persist) saveSettings({ open });
   }
 
   function isOpen() {
@@ -127,11 +127,8 @@ export function createPanel() {
 
   loadSettings().then((settings) => {
     applyWidth(settings.width);
-    setOpen(settings.open);
+    setOpen(settings.open, false);
   });
-
-  applyWidth(DEFAULT_WIDTH);
-  setOpen(true);
 
   return {
     host,
