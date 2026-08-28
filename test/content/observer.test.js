@@ -103,4 +103,27 @@ describe('startObserver', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
   });
+
+  it('デバウンス窓をまたぐ変更は 1 回にまとめる', async () => {
+    // 同一 tick の連続変更は MutationObserver 自体がまとめてしまうため、
+    // デバウンスの有無を区別するには窓をまたいで変更を起こす必要がある。
+    const onChange = vi.fn();
+    stop = startObserver({ onChange, onRoomChange: () => {}, debounceMs: 50 });
+    vi.advanceTimersByTime(60); // 接続時の初回分
+    onChange.mockClear();
+
+    const timeline = document.getElementById('_timeLine');
+    timeline.appendChild(document.createElement('div'));
+    await Promise.resolve();
+    vi.advanceTimersByTime(30);
+    timeline.appendChild(document.createElement('div'));
+    await Promise.resolve();
+    vi.advanceTimersByTime(30);
+    // 1 回目から 60ms 経つが再スケジュールされているのでまだ呼ばれない。
+    // デバウンスしない実装ならここで既に 2 回呼ばれている。
+    expect(onChange).toHaveBeenCalledTimes(0);
+
+    vi.advanceTimersByTime(30);
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
 });
