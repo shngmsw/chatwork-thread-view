@@ -3,10 +3,12 @@ import { renderThreads } from '../ui/render.js';
 import { getMessageElements } from './selectors.js';
 import { createScrapeContext, parseTimeline } from './scraper.js';
 import { buildThreads } from '../core/threadTree.js';
+import { startObserver } from './observer.js';
 
 const state = {
   panel: null,
   hideEmpty: true,
+  stopObserver: null,
 };
 
 function refresh() {
@@ -26,8 +28,14 @@ function boot() {
   state.panel = createPanel();
   if (!state.panel) return;
   refresh();
-  // Task 5 で MutationObserver に置き換える暫定の再描画。
-  window.setInterval(refresh, 3000);
+  state.stopObserver = startObserver({
+    onChange: refresh,
+    onRoomChange: () => {
+      // ルームが変わったら前ルームの表示を残さない。
+      state.panel.body.textContent = '';
+      refresh();
+    },
+  });
 }
 
 boot();
