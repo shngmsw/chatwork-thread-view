@@ -1,0 +1,15 @@
+{
+  "name": "chatwork-thread-view",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Chatwork の返信をスレッド形式で構造化表示する Chrome 拡張",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8",
+    "jsdom": "^25.0.1"
+  }
+}
