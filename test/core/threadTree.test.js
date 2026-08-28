@@ -110,6 +110,20 @@ describe('buildThreads', () => {
     expect(totalNodes(threads)).toBe(1);
   });
 
+  it('3 要素の循環に尾が付いた形状でも全ノードを保持し木構造になる', () => {
+    // A -> B -> C -> A の循環に、D -> B の尾が付く
+    const input = [
+      msg('A', { replyToId: 'B', replyToRoomId: 'R1', timestamp: 100 }),
+      msg('B', { replyToId: 'C', replyToRoomId: 'R1', timestamp: 200 }),
+      msg('C', { replyToId: 'A', replyToRoomId: 'R1', timestamp: 300 }),
+      reply('D', 'B', { timestamp: 400 }),
+    ];
+    const threads = buildThreads(input);
+    expect(threads).toHaveLength(1);
+    expect(threads[0].rootId).toBe('A');
+    expect(totalNodes(threads)).toBe(4);
+  });
+
   it('不変条件: 出力ノード総数が入力メッセージ数と等しい', () => {
     const input = [
       msg('1', { timestamp: 100 }),

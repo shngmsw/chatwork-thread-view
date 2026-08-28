@@ -58,7 +58,6 @@ export function buildThreads(messages) {
       parent.children.push(nodes.get(m.id));
     }
 
-    reparentUnreachable(rootNode, nodes);
     assignDepthAndSort(rootNode, 0);
 
     let updatedAt = 0;
@@ -80,40 +79,6 @@ export function buildThreads(messages) {
     (a, b) => b.updatedAt - a.updatedAt || (a.rootId < b.rootId ? -1 : 1)
   );
   return threads;
-}
-
-function collectReachable(rootNode) {
-  const reached = new Set([rootNode.message.id]);
-  const stack = [rootNode];
-  while (stack.length > 0) {
-    const node = stack.pop();
-    for (const child of node.children) {
-      if (reached.has(child.message.id)) continue;
-      reached.add(child.message.id);
-      stack.push(child);
-    }
-  }
-  return reached;
-}
-
-/**
- * root から到達できないノードを root 直下に付け替える。
- * 「出力ノード総数 == 入力メッセージ数」の不変条件を保証する安全弁。
- */
-function reparentUnreachable(rootNode, nodes) {
-  let reached = collectReachable(rootNode);
-  if (reached.size === nodes.size) return;
-  for (const [id, node] of nodes) {
-    if (reached.has(id)) continue;
-    const parentId = node.message.replyToId;
-    const parent = parentId ? nodes.get(parentId) : null;
-    if (parent) {
-      parent.children = parent.children.filter((c) => c !== node);
-    }
-    rootNode.children.push(node);
-    reached = collectReachable(rootNode);
-    if (reached.size === nodes.size) return;
-  }
 }
 
 function assignDepthAndSort(node, depth) {
