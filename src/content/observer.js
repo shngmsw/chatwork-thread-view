@@ -2,6 +2,8 @@ import { getTimeline, getCurrentRoomId } from './selectors.js';
 
 const DEFAULT_DEBOUNCE_MS = 150;
 const RECONNECT_INTERVAL_MS = 1000;
+// デバウンスの再スケジュールが続いても、この倍率を超えたら必ず 1 回走らせる。
+const MAX_WAIT_FACTOR = 5;
 
 /**
  * タイムラインの変更とルーム切替を監視する。
@@ -12,18 +14,33 @@ const RECONNECT_INTERVAL_MS = 1000;
 export function startObserver(options) {
   const { onChange, onRoomChange, debounceMs = DEFAULT_DEBOUNCE_MS } = options;
 
+  const maxWaitMs = debounceMs * MAX_WAIT_FACTOR;
+
   let timer = null;
+  let maxTimer = null;
   let observed = null;
   let stopped = false;
   let roomId = getCurrentRoomId();
 
+  function fire() {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    if (maxTimer !== null) {
+      clearTimeout(maxTimer);
+      maxTimer = null;
+    }
+    onChange();
+  }
+
   function schedule() {
     if (stopped) return;
     if (timer !== null) clearTimeout(timer);
-    timer = setTimeout(() => {
-      timer = null;
-      onChange();
-    }, debounceMs);
+    timer = setTimeout(fire, debounceMs);
+    // Chatwork がタイムラインを書き換え続けると、デバウンスだけでは再スケジュールが
+    // 永久に続いて解析が一度も走らない。最初の保留から maxWaitMs で打ち切る。
+    if (maxTimer === null) maxTimer = setTimeout(fire, maxWaitMs);
   }
 
   const observer = new MutationObserver(schedule);
@@ -62,6 +79,7 @@ export function startObserver(options) {
   return function stop() {
     stopped = true;
     if (timer !== null) clearTimeout(timer);
+    if (maxTimer !== null) clearTimeout(maxTimer);
     clearInterval(reconnectTimer);
     observer.disconnect();
     window.removeEventListener('hashchange', handleHashChange);

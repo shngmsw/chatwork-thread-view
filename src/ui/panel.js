@@ -7,6 +7,7 @@ const OPEN_CLASS = 'ctv-open';
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 640;
 const DEFAULT_WIDTH = 360;
+const NOTICE_MS = 4000;
 
 function clampWidth(value) {
   if (!Number.isFinite(value)) return DEFAULT_WIDTH;
@@ -77,8 +78,10 @@ export function createPanel() {
       <span class="panel__title">スレッド</span>
       <span class="panel__count" data-role="count"></span>
       <span class="panel__spacer"></span>
+      <button class="panel__btn" data-role="toggle-empty" type="button">全件表示</button>
       <button class="panel__btn" data-role="close" type="button">閉じる</button>
     </header>
+    <div class="panel__notice" data-role="notice" role="status" aria-live="polite" hidden></div>
     <div class="panel__body" data-role="body"></div>
   `;
 
@@ -90,8 +93,44 @@ export function createPanel() {
   const closeBtn = shadow.querySelector('[data-role="close"]');
   const grip = shadow.querySelector('[data-role="grip"]');
   const reopenBtn = shadow.querySelector('[data-role="reopen"]');
+  const notice = shadow.querySelector('[data-role="notice"]');
+  const toggleEmptyBtn = shadow.querySelector('[data-role="toggle-empty"]');
 
   let width = DEFAULT_WIDTH;
+  let noticeTimer = null;
+  let hideEmpty = true;
+  let hideEmptyHandler = () => {};
+
+  // 通知は本文の外に置く。renderThreads は body を毎回作り直すため、
+  // 本文の中に出すと直後の再描画で黙って消える。
+  function clearNotice() {
+    if (noticeTimer !== null) {
+      clearTimeout(noticeTimer);
+      noticeTimer = null;
+    }
+    notice.textContent = '';
+    notice.hidden = true;
+  }
+
+  function showNotice(text) {
+    // 先に出ている通知は必ず片付ける。積み上げると古いタイマーが新しい通知を消す。
+    clearNotice();
+    notice.textContent = text;
+    notice.hidden = false;
+    noticeTimer = setTimeout(clearNotice, NOTICE_MS);
+  }
+
+  function setHideEmpty(next) {
+    hideEmpty = next;
+    toggleEmptyBtn.textContent = hideEmpty ? '全件表示' : '返信ありのみ';
+  }
+
+  toggleEmptyBtn.addEventListener('click', () => {
+    setHideEmpty(!hideEmpty);
+    hideEmptyHandler(hideEmpty);
+  });
+
+  setHideEmpty(true);
 
   function applyWidth(next) {
     width = clampWidth(next);
@@ -143,7 +182,14 @@ export function createPanel() {
     },
     setOpen,
     isOpen,
+    showNotice,
+    clearNotice,
+    setHideEmpty,
+    onToggleHideEmpty(handler) {
+      hideEmptyHandler = handler;
+    },
     destroy() {
+      clearNotice();
       host.remove();
       document.documentElement.classList.remove(OPEN_CLASS);
     },

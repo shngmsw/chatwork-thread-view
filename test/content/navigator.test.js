@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { jumpToMessage, HIGHLIGHT_CLASS } from '../../src/content/navigator.js';
 
+let warnSpy;
+
 beforeEach(() => {
   vi.useFakeTimers();
+  // スクロール親を持たない jsdom では警告が必ず出る。テスト出力を汚さないよう受け止める。
+  warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
   document.head.innerHTML = '';
   document.body.innerHTML = `
     <div id="_timeLine">
@@ -14,6 +18,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  warnSpy.mockRestore();
   vi.useRealTimers();
   delete Element.prototype.scrollIntoView;
 });
@@ -71,5 +76,16 @@ describe('jumpToMessage', () => {
 
     vi.advanceTimersByTime(1000);
     expect(target.classList.contains(HIGHLIGHT_CLASS)).toBe(false);
+  });
+
+  it('スクロール親が見つからない警告は 1 度しか出さない', async () => {
+    // ジャンプのたびに警告を出すとコンソールが埋まる。状況は毎回同じなので 1 度で足りる。
+    vi.resetModules();
+    const fresh = await import('../../src/content/navigator.js');
+
+    fresh.jumpToMessage('123');
+    fresh.jumpToMessage('456');
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
   });
 });

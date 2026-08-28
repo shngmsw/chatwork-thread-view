@@ -8,6 +8,10 @@ const HIGHLIGHT_MS = 1500;
 // 古いタイマーが新しい強調を早期に消したり、複数が同時に光ったりする。
 let pending = null;
 
+// スクロール親が取れない状況はレイアウトの性質で決まるので、毎回同じ結果になる。
+// ジャンプのたびに警告するとコンソールが埋まるだけなので 1 度で打ち切る。
+let warnedNoScrollContainer = false;
+
 function clearPendingHighlight() {
   if (!pending) return;
   clearTimeout(pending.timer);
@@ -43,7 +47,8 @@ export function jumpToMessage(messageId) {
 
   // スクロール親の有無に関わらず scrollIntoView で足りるが、
   // 親が取れない場合はレイアウトが想定外なのでログに残す。
-  if (!findScrollContainer(target)) {
+  if (!findScrollContainer(target) && !warnedNoScrollContainer) {
+    warnedNoScrollContainer = true;
     console.warn('[ctv] scroll container not found; falling back to scrollIntoView');
   }
 

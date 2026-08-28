@@ -126,4 +126,22 @@ describe('startObserver', () => {
     vi.advanceTimersByTime(30);
     expect(onChange).toHaveBeenCalledTimes(1);
   });
+
+  it('変更が途切れなくても最大待ち時間で必ず onChange が呼ばれる', async () => {
+    // Chatwork がタイムラインを断続的に書き換え続けると、デバウンスだけの実装では
+    // 再スケジュールが永久に続いて解析が一度も走らない (飢餓)。
+    const onChange = vi.fn();
+    stop = startObserver({ onChange, onRoomChange: () => {}, debounceMs: 50 });
+    vi.advanceTimersByTime(60); // 接続時の初回分
+    onChange.mockClear();
+
+    const timeline = document.getElementById('_timeLine');
+    for (let i = 0; i < 20; i += 1) {
+      timeline.appendChild(document.createElement('div'));
+      await Promise.resolve();
+      vi.advanceTimersByTime(30); // デバウンス窓 (50ms) より短い間隔
+    }
+
+    expect(onChange).toHaveBeenCalled();
+  });
 });

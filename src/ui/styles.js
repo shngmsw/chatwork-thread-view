@@ -46,6 +46,15 @@ export const PANEL_CSS = `
   overflow-y: auto;
   padding: 10px;
 }
+.panel__notice {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5d3b0;
+  background: #f7ecd8;
+  color: #8a5a0b;
+  font-size: 12px;
+}
+.panel__notice[hidden] { display: none; }
 .panel__grip {
   position: absolute;
   left: 0;
@@ -88,6 +97,7 @@ export const PANEL_CSS = `
 .panel--closed { border-left: none; box-shadow: none; background: transparent; }
 .panel--closed .panel__head,
 .panel--closed .panel__body,
+.panel--closed .panel__notice,
 .panel--closed .panel__grip { display: none; }
 .panel--closed .panel__reopen { display: flex; }
 .thread-list { display: flex; flex-direction: column; gap: 8px; }
@@ -138,4 +148,18 @@ export const PANEL_CSS = `
   flex: 1 1 auto;
 }
 .node__time { color: #5b6e70; font-size: 11px; white-space: nowrap; }
+.diagnostic {
+  border: 1px solid #8a5a0b;
+  background: #f7ecd8;
+  color: #8a5a0b;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.diagnostic__code {
+  font-family: Consolas, "Courier New", monospace;
+  display: block;
+  margin: 6px 0;
+  word-break: break-all;
+}
 `;

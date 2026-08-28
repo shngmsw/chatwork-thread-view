@@ -58,3 +58,29 @@ export function getCurrentRoomId() {
   const matched = window.location.hash.match(/#!rid(\d+)/);
   return matched ? matched[1] : null;
 }
+
+// scraper.js が送信者を特定できなかったときに入れる名前。
+const UNKNOWN_NAME = '不明';
+
+/**
+ * セレクタが今も Chatwork の DOM に噛み合っているかを検査する。
+ * 失敗した項目名の配列を返し、利用者への診断情報として使う。
+ * @param {import('../core/types.js').ChatworkMessage[]} messages
+ * @param {Document} [doc]
+ * @returns {{ok: boolean, failures: string[]}}
+ */
+export function runHealthCheck(messages, doc = document) {
+  const failures = [];
+
+  if (!getTimeline(doc)) failures.push('timeline');
+  if (getMessageElements(doc).length === 0) failures.push('messages');
+
+  if (messages.length > 0) {
+    const resolved = messages.filter(
+      (m) => m.userName && m.userName !== UNKNOWN_NAME
+    ).length;
+    if (resolved / messages.length <= 0.5) failures.push('userName');
+  }
+
+  return { ok: failures.length === 0, failures };
+}

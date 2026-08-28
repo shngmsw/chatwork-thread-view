@@ -1,0 +1,95 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const FIXTURE = readFileSync(resolve(here, '../fixtures/timeline.html'), 'utf8');
+
+const REPLY_ID = '2141035123569991680';
+const DIAGNOSTIC_TEXT = 'Chatwork の画面構造が変わった可能性があります。';
+
+let main;
+
+// main.js は読み込み時に boot() する。DOM を用意してから import する。
+async function boot() {
+  vi.resetModules();
+  main = await import('../../src/content/main.js');
+}
+
+const panelText = () => main.getPanel().shadow.textContent;
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  document.head.innerHTML = '';
+  document.body.innerHTML = '';
+  document.documentElement.className = '';
+  window.location.hash = '#!rid211028552';
+  Element.prototype.scrollIntoView = vi.fn();
+});
+
+afterEach(() => {
+  if (main) main.teardown();
+  main = undefined;
+  vi.useRealTimers();
+  delete Element.prototype.scrollIntoView;
+});
+
+describe('健全性チェックの表示条件', () => {
+  it('初回表示でメッセージが 0 件でも診断を出さない', async () => {
+    document.body.innerHTML = '<div id="_timeLine"></div>';
+    await boot();
+    expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
+    expect(panelText()).toContain('メッセージを読み込み中です');
+  });
+
+  it('一度も描画していない段階ではタイムラインが無くても診断を出さない', async () => {
+    // Chatwork 本体の描画前に content script が走るとこの状態になる。
+    // 起動直後に警告を出すと、正常な遅延を故障として見せてしまう。
+    document.body.innerHTML = '';
+    await boot();
+    expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
+  });
+
+  it('一度描画したあとに DOM が壊れたら診断を出す', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+    expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
+
+    document.getElementById('_timeLine').remove();
+    main.refresh();
+
+    expect(panelText()).toContain(DIAGNOSTIC_TEXT);
+    expect(panelText()).toContain('timeline');
+  });
+
+  it('ルーム切替直後にメッセージが 0 件でも診断を出さない', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+
+    // 切替先のタイムラインはまだ空。これは故障ではない。
+    document.getElementById('_timeLine').innerHTML = '';
+    main.refresh();
+
+    expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
+  });
+});
+
+describe('未読み込みメッセージの通知', () => {
+  it('通知は本文の再描画で消えない', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+
+    // ジャンプ先だけタイムラインから消えた状態を作る。
+    document.getElementById(`_messageId${REPLY_ID}`).remove();
+    main
+      .getPanel()
+      .shadow.querySelector(`[data-role="node"][data-message-id="${REPLY_ID}"]`)
+      .click();
+    expect(panelText()).toContain('まだ読み込まれていません');
+
+    // 監視由来の再描画が通知を巻き添えにしないこと。
+    main.refresh();
+    expect(panelText()).toContain('まだ読み込まれていません');
+  });
+});
