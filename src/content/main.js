@@ -4,6 +4,7 @@ import { getMessageElements } from './selectors.js';
 import { createScrapeContext, parseTimeline } from './scraper.js';
 import { buildThreads } from '../core/threadTree.js';
 import { startObserver } from './observer.js';
+import { jumpToMessage } from './navigator.js';
 
 const state = {
   panel: null,
@@ -12,6 +13,15 @@ const state = {
   // 開いているスレッドの rootId。再描画をまたいで開閉状態を保つ。
   openIds: new Set(),
 };
+
+function showNotice(text) {
+  if (!state.panel) return;
+  const notice = document.createElement('div');
+  notice.className = 'state state--error';
+  notice.textContent = text;
+  state.panel.body.prepend(notice);
+  setTimeout(() => notice.remove(), 4000);
+}
 
 function refresh() {
   if (!state.panel) return;
@@ -26,7 +36,10 @@ function refresh() {
       else state.openIds.delete(rootId);
     },
     onJump: (messageId) => {
-      console.log('[ctv] jump requested', messageId);
+      if (jumpToMessage(messageId)) return;
+      showNotice(
+        'このメッセージはまだ読み込まれていません。タイムラインを上にスクロールしてください。'
+      );
     },
   });
 }
