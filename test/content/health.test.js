@@ -31,12 +31,32 @@ describe('runHealthCheck', () => {
     expect(result.failures).toContain('messages');
   });
 
-  it('名前解決の成功率が 50% 以下なら失敗する', () => {
+  it('名前解決の成功率が 50% 未満なら失敗する', () => {
     const result = runHealthCheck(
-      [message('不明'), message('不明'), message('佐藤')],
+      [message('不明'), message('不明'), message('不明'), message('佐藤'), message('鈴木')],
       document
     );
     expect(result.ok).toBe(false);
     expect(result.failures).toContain('userName');
+  });
+
+  it('ちょうど 50% では失敗しない', () => {
+    const result = runHealthCheck(
+      [message('不明'), message('不明'), message('佐藤'), message('鈴木')],
+      document
+    );
+    expect(result.failures).not.toContain('userName');
+  });
+
+  it('件数が少なすぎるときは名前解決率を判定しない', () => {
+    // 読み込み窓が数件しかない瞬間は連投継続が混ざるだけで比率が振れる。
+    const result = runHealthCheck([message('不明'), message('不明')], document);
+    expect(result.failures).not.toContain('userName');
+  });
+
+  it('タイムラインの子要素数を返す (空のルームと故障の区別に使う)', () => {
+    expect(runHealthCheck([], document).timelineChildCount).toBe(1);
+    document.body.innerHTML = '<div id="_timeLine"></div>';
+    expect(runHealthCheck([], document).timelineChildCount).toBe(0);
   });
 });

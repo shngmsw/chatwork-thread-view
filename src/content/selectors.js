@@ -60,27 +60,40 @@ export function getCurrentRoomId() {
 }
 
 // scraper.js が送信者を特定できなかったときに入れる名前。
-const UNKNOWN_NAME = '不明';
+// scraper.js とここで別々に持つと、片方を変えたとき健全性チェックが
+// 黙って無効になるので、この 1 箇所を共有する。
+export const UNKNOWN_NAME = '不明';
+
+// 送信者名の解決率を見るのに必要な最小件数。
+// 読み込み窓が数件しかない瞬間は連投継続が混ざるだけで比率が振れるため。
+const NAME_CHECK_MIN_SAMPLE = 5;
 
 /**
  * セレクタが今も Chatwork の DOM に噛み合っているかを検査する。
  * 失敗した項目名の配列を返し、利用者への診断情報として使う。
  * @param {import('../core/types.js').ChatworkMessage[]} messages
  * @param {Document} [doc]
- * @returns {{ok: boolean, failures: string[]}}
+ * @returns {{ok: boolean, failures: string[], timelineChildCount: number}}
  */
 export function runHealthCheck(messages, doc = document) {
   const failures = [];
 
-  if (!getTimeline(doc)) failures.push('timeline');
+  const timeline = getTimeline(doc);
+  if (!timeline) failures.push('timeline');
   if (getMessageElements(doc).length === 0) failures.push('messages');
 
-  if (messages.length > 0) {
+  if (messages.length >= NAME_CHECK_MIN_SAMPLE) {
     const resolved = messages.filter(
       (m) => m.userName && m.userName !== UNKNOWN_NAME
     ).length;
-    if (resolved / messages.length <= 0.5) failures.push('userName');
+    if (resolved / messages.length < 0.5) failures.push('userName');
   }
 
-  return { ok: failures.length === 0, failures };
+  // 「まだ読めていない空のルーム」と「セレクタが噛み合わなくなった」の
+  // 区別に使う。中身が詰まっているのに 1 件も拾えないなら後者。
+  return {
+    ok: failures.length === 0,
+    failures,
+    timelineChildCount: timeline ? timeline.children.length : 0,
+  };
 }

@@ -1,4 +1,4 @@
-import { SEL } from './selectors.js';
+import { SEL, UNKNOWN_NAME } from './selectors.js';
 
 const AVATAR_AID = /(?:^|\s)_avatarAid(\d+)(?:\s|$)/;
 
@@ -59,7 +59,7 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
       userName =
         (accountId && ctx.nameByAid.get(accountId)) ||
         (sameSenderAsPrev ? ctx.lastUserName : '') ||
-        '不明';
+        UNKNOWN_NAME;
     }
 
     const avatarUrl =

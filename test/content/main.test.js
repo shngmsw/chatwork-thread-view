@@ -51,16 +51,79 @@ describe('健全性チェックの表示条件', () => {
     expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
   });
 
-  it('一度描画したあとに DOM が壊れたら診断を出す', async () => {
+  it('起動時点で既に壊れている場合も、猶予を過ぎたら診断を出す', async () => {
+    // セレクタが壊れると 1 件も描画できない。「描画に成功したか」を条件にすると
+    // 故障そのものが条件の成立を妨げ、永久に報告されなくなる。
+    document.body.innerHTML =
+      '<div id="_renamedTimeLine"><div class="_msg" data-mid="1"></div></div>';
+    await boot();
+    expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
+
+    vi.advanceTimersByTime(16000);
+    main.refresh();
+
+    expect(panelText()).toContain(DIAGNOSTIC_TEXT);
+    expect(panelText()).toContain('timeline');
+  });
+
+  it('タイムラインに中身があるのに 1 件も拾えなければ診断を出す', async () => {
+    // #_timeLine は残っているがメッセージ側のセレクタだけ壊れた状態。
+    // 「投稿が無いだけのルーム」と区別できないと、この故障を見逃す。
+    document.body.innerHTML =
+      '<div id="_timeLine"><div class="_msg" data-mid="1"></div></div>';
+    await boot();
+
+    vi.advanceTimersByTime(16000);
+    main.refresh();
+
+    expect(panelText()).toContain(DIAGNOSTIC_TEXT);
+    expect(panelText()).toContain('messages');
+  });
+
+  it('本当に投稿が無いルームでは、いくら待っても診断を出さない', async () => {
+    document.body.innerHTML = '<div id="_timeLine"></div>';
+    await boot();
+
+    vi.advanceTimersByTime(120000);
+    main.refresh();
+
+    expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
+    expect(panelText()).toContain('メッセージを読み込み中です');
+  });
+
+  it('一度描画したあとに DOM が壊れ、猶予を過ぎたら診断を出す', async () => {
     document.body.innerHTML = FIXTURE;
     await boot();
     expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
 
     document.getElementById('_timeLine').remove();
     main.refresh();
+    // 壊れた直後はまだ出さない (ルーム切替の一瞬と区別がつかないため)。
+    expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
+
+    vi.advanceTimersByTime(16000);
+    main.refresh();
 
     expect(panelText()).toContain(DIAGNOSTIC_TEXT);
     expect(panelText()).toContain('timeline');
+  });
+
+  it('ルーム切替でタイムラインごと差し替わる間は診断を出さない', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+
+    // 切替の瞬間はタイムライン要素そのものが一時的に居なくなる。
+    document.getElementById('_timeLine').remove();
+    vi.advanceTimersByTime(1200);
+    main.refresh();
+    expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
+
+    // 新しいタイムラインが入れば回復し、以降も出ない。
+    document.body.innerHTML = FIXTURE;
+    main.refresh();
+    vi.advanceTimersByTime(60000);
+    main.refresh();
+    expect(panelText()).not.toContain(DIAGNOSTIC_TEXT);
   });
 
   it('ルーム切替直後にメッセージが 0 件でも診断を出さない', async () => {

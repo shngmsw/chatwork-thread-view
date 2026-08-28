@@ -12,9 +12,15 @@ const state = {
   stopObserver: null,
   // 開いているスレッドの rootId。再描画をまたいで開閉状態を保つ。
   openIds: new Set(),
-  // 一度でも実データを描画したか。起動直後の空タイムラインを故障と誤認しないための門番。
-  hasRenderedOnce: false,
+  // 健全でなくなった時刻。復旧すれば null に戻す。
+  // 「一度描画に成功したか」を門にすると、起動時点で既に壊れている場合に
+  // その条件自体がフラグの成立を妨げて永久に報告されない。時間で判断する。
+  unhealthySince: null,
 };
+
+// 不調がこの時間続いたら故障として報告する。
+// ルーム切替の一時的な欠落 (実測で最大 ~1.2 秒) を確実に跨ぐ長さにする。
+const UNHEALTHY_GRACE_MS = 15000;
 
 function renderDiagnostic(failures) {
   const box = document.createElement('div');
@@ -64,14 +70,24 @@ function renderDiagnostic(failures) {
  * 健全性チェックの失敗を利用者に見せてよいかを判断する。
  * 「まだ読めていない」だけの状態を故障として見せないための門。
  */
-function shouldReportHealth(health) {
-  if (health.ok) return false;
-  // 起動直後は Chatwork 側の描画がまだ終わっていないことがある。
-  // 一度も実データを描画していない間は、何が欠けていても待つ。
-  if (!state.hasRenderedOnce) return false;
-  // ルーム切替直後は一時的にメッセージが 0 件になる。これも故障ではない。
-  if (health.failures.length === 1 && health.failures[0] === 'messages') return false;
-  return true;
+function shouldReportHealth(health, now = Date.now()) {
+  if (health.ok) {
+    state.unhealthySince = null;
+    return false;
+  }
+
+  // タイムラインはあるが中身も空。まだ読めていないか、本当に投稿が無いルーム。
+  // 中身が詰まっているのに 1 件も拾えない場合は素通りさせ、下の猶予判定に回す。
+  const onlyMessages =
+    health.failures.length === 1 && health.failures[0] === 'messages';
+  if (onlyMessages && health.timelineChildCount === 0) {
+    state.unhealthySince = null;
+    return false;
+  }
+
+  // 起動直後もルーム切替直後も一時的に欠ける。続いたときだけ故障と見なす。
+  if (state.unhealthySince === null) state.unhealthySince = now;
+  return now - state.unhealthySince >= UNHEALTHY_GRACE_MS;
 }
 
 export function refresh() {
@@ -103,7 +119,6 @@ export function refresh() {
     },
   });
 
-  if (messages.length > 0) state.hasRenderedOnce = true;
 }
 
 export function boot() {
@@ -130,7 +145,7 @@ export function boot() {
 }
 
 /**
- * 監視とパネルを止めて注入前の状態に戻す。
+ * 監視を止めてパネルを外す (head に注入したスタイルは残る)。
  * 拡張のリロードでは隔離ワールドが孤立するだけで pagehide も走らないため、
  * これは「その場合の後始末」ではない。決定的に停止できる口を 1 つ用意しておくもの。
  */
@@ -145,7 +160,7 @@ export function teardown() {
   }
   state.openIds.clear();
   state.hideEmpty = true;
-  state.hasRenderedOnce = false;
+  state.unhealthySince = null;
 }
 
 export function getPanel() {
