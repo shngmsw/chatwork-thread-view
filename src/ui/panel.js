@@ -29,7 +29,7 @@ function ensureLayoutStyle() {
   z-index: 2147483000;
 }
 html.${OPEN_CLASS} ${SEL.appRoot} { width: calc(100% - var(--ctv-w)) !important; }
-html:not(.${OPEN_CLASS}) #${PANEL_ID} { display: none; }
+html:not(.${OPEN_CLASS}) #${PANEL_ID} { width: 0; }
 `;
   document.head.appendChild(style);
   return style;
@@ -71,6 +71,7 @@ export function createPanel() {
   const panel = document.createElement('div');
   panel.className = 'panel';
   panel.innerHTML = `
+    <button class="panel__reopen" data-role="reopen" type="button" aria-label="スレッドパネルを開く">«</button>
     <div class="panel__grip" data-role="grip" role="separator" aria-orientation="vertical"></div>
     <header class="panel__head">
       <span class="panel__title">スレッド</span>
@@ -88,6 +89,7 @@ export function createPanel() {
   const count = shadow.querySelector('[data-role="count"]');
   const closeBtn = shadow.querySelector('[data-role="close"]');
   const grip = shadow.querySelector('[data-role="grip"]');
+  const reopenBtn = shadow.querySelector('[data-role="reopen"]');
 
   let width = DEFAULT_WIDTH;
 
@@ -98,6 +100,7 @@ export function createPanel() {
 
   function setOpen(open, persist = true) {
     document.documentElement.classList.toggle(OPEN_CLASS, open);
+    panel.classList.toggle('panel--closed', !open);
     if (persist) saveSettings({ open });
   }
 
@@ -106,6 +109,7 @@ export function createPanel() {
   }
 
   closeBtn.addEventListener('click', () => setOpen(false));
+  reopenBtn.addEventListener('click', () => setOpen(true));
 
   grip.addEventListener('pointerdown', (event) => {
     event.preventDefault();

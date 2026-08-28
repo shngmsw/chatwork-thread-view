@@ -62,4 +62,32 @@ export const PANEL_CSS = `
   text-align: center;
 }
 .state--error { color: #8a5a0b; text-align: left; }
+.panel__reopen {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #d2dcdc;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  background: #ffffff;
+  color: #0c6b6b;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: -2px 0 6px rgba(0, 0, 0, 0.08);
+}
+.panel__reopen:hover { background: #edf1f1; }
+.panel__reopen:focus-visible { outline: 2px solid #0c6b6b; outline-offset: 1px; }
+.panel--closed { border-left: none; box-shadow: none; background: transparent; }
+.panel--closed .panel__head,
+.panel--closed .panel__body,
+.panel--closed .panel__grip { display: none; }
+.panel--closed .panel__reopen { display: flex; }
 `;
