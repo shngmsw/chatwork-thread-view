@@ -90,4 +90,52 @@ export const PANEL_CSS = `
 .panel--closed .panel__body,
 .panel--closed .panel__grip { display: none; }
 .panel--closed .panel__reopen { display: flex; }
+.thread-list { display: flex; flex-direction: column; gap: 8px; }
+.thread {
+  border: 1px solid #d2dcdc;
+  border-radius: 4px;
+  background: #ffffff;
+  overflow: hidden;
+}
+.thread[open] { border-color: #0c6b6b; }
+.thread__summary { cursor: pointer; padding: 8px 10px; list-style: none; }
+.thread__summary::-webkit-details-marker { display: none; }
+.thread__summary:focus-visible { outline: 2px solid #0c6b6b; outline-offset: -2px; }
+.thread__name { font-weight: 700; margin-right: 6px; }
+.thread__preview { color: #33474a; }
+.thread__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  color: #5b6e70;
+  font-size: 11px;
+}
+.thread__badge {
+  color: #8a5a0b;
+  background: #f7ecd8;
+  border-radius: 2px;
+  padding: 0 4px;
+}
+.node__wrap { display: block; }
+.node {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 4px 10px;
+  border-top: 1px solid #edf1f1;
+  cursor: pointer;
+  font-size: 12px;
+}
+.node:hover { background: #f4f7f7; }
+.node:focus-visible { outline: 2px solid #0c6b6b; outline-offset: -2px; }
+.node__name { font-weight: 700; white-space: nowrap; }
+.node__body {
+  color: #33474a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+.node__time { color: #5b6e70; font-size: 11px; white-space: nowrap; }
 `;
