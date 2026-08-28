@@ -70,6 +70,9 @@ Chatwork のタイムラインは時系列フラットであり、返信 (`[rp]`
 ### 3.3 依存してはならないもの
 
 - styled-components の生成クラス (`sc-hWmCAe`, `cqwzsM`, `iOFFuf` 等)。ビルドごとに変わる。
+  **禁止しているのは「生成された識別子」であって「`_` 接頭辞が付いていないクラス」ではない。**
+  `userIconImage` のように意味のある固定名が付いたクラスは、`_message` / `_speaker` と同じく依存してよい
+  (実機で `class="sc-gFqAkR rGzLa userIconImage"` を確認済み。ハッシュは前 2 つで、3 つ目は手書きの意味クラス)。
 - スクロールコンテナのクラス名。**セレクタではなく「メッセージ要素から祖先を辿り、最初に `overflow-y: auto|scroll` かつ `scrollHeight > clientHeight` の要素」を探す関数で解決する。**
 - `window.ACCESS_TOKEN` / `/gateway/*` 内部 API。認証情報を扱わない方針のため使用しない。
 
