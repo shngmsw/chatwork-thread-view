@@ -72,4 +72,35 @@ describe('startObserver', () => {
 
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('接続した時点で既に描画済みでも初回の onChange が呼ばれる', () => {
+    // タイムラインが先に埋まっている状態で監視を開始する。
+    // mutation は起きないので、connect() 自身が再解析を促さないと永久に更新されない。
+    document.getElementById('_timeLine').innerHTML = '<div class="_message" data-mid="1"></div>';
+    const onChange = vi.fn();
+    stop = startObserver({ onChange, onRoomChange: () => {}, debounceMs: 50 });
+
+    vi.advanceTimersByTime(60);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('タイムライン要素が差し替わったら再接続して onChange を呼ぶ', () => {
+    const onChange = vi.fn();
+    stop = startObserver({ onChange, onRoomChange: () => {}, debounceMs: 50 });
+    vi.advanceTimersByTime(60);
+    onChange.mockClear();
+
+    // Chatwork が #_timeLine ごと差し替えた状況を再現する。
+    document.getElementById('_timeLine').remove();
+    const fresh = document.createElement('div');
+    fresh.id = '_timeLine';
+    fresh.innerHTML = '<div class="_message" data-mid="9"></div>';
+    document.body.appendChild(fresh);
+
+    vi.advanceTimersByTime(1000); // 再接続チェックの間隔
+    vi.advanceTimersByTime(60);   // デバウンス
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
 });

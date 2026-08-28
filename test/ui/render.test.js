@@ -86,4 +86,52 @@ describe('renderThreads', () => {
     renderThreads(container, threads, { hideEmpty: true, onJump: () => {} });
     expect(container.querySelectorAll('[data-role="thread"]')).toHaveLength(1);
   });
+
+  it('再描画しても開いていたスレッドは開いたままになる', () => {
+    const threads = buildThreads([
+      msg('1', { timestamp: 100 }),
+      reply('2', '1', { timestamp: 200 }),
+    ]);
+    const openIds = new Set();
+    const onToggle = (rootId, open) => {
+      if (open) openIds.add(rootId);
+      else openIds.delete(rootId);
+    };
+
+    renderThreads(container, threads, { hideEmpty: true, onJump: () => {}, openIds, onToggle });
+    const card = container.querySelector('[data-role="thread"]');
+    expect(card.open).toBe(false);
+
+    // ユーザーが開く。details の toggle イベントで状態が記録される。
+    card.open = true;
+    card.dispatchEvent(new Event('toggle'));
+    expect(openIds.has('1')).toBe(true);
+
+    // 新着メッセージなどで再描画が走る。
+    renderThreads(container, threads, { hideEmpty: true, onJump: () => {}, openIds, onToggle });
+    expect(container.querySelector('[data-role="thread"]').open).toBe(true);
+  });
+
+  it('閉じたスレッドは再描画後も閉じたままになる', () => {
+    const threads = buildThreads([
+      msg('1', { timestamp: 100 }),
+      reply('2', '1', { timestamp: 200 }),
+    ]);
+    const openIds = new Set(['1']);
+    const onToggle = (rootId, open) => {
+      if (open) openIds.add(rootId);
+      else openIds.delete(rootId);
+    };
+
+    renderThreads(container, threads, { hideEmpty: true, onJump: () => {}, openIds, onToggle });
+    const card = container.querySelector('[data-role="thread"]');
+    expect(card.open).toBe(true);
+
+    card.open = false;
+    card.dispatchEvent(new Event('toggle'));
+    expect(openIds.has('1')).toBe(false);
+
+    renderThreads(container, threads, { hideEmpty: true, onJump: () => {}, openIds, onToggle });
+    expect(container.querySelector('[data-role="thread"]').open).toBe(false);
+  });
 });

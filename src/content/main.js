@@ -9,6 +9,8 @@ const state = {
   panel: null,
   hideEmpty: true,
   stopObserver: null,
+  // 開いているスレッドの rootId。再描画をまたいで開閉状態を保つ。
+  openIds: new Set(),
 };
 
 function refresh() {
@@ -18,6 +20,11 @@ function refresh() {
   state.panel.setCount(threads.filter((t) => t.replyCount > 0).length);
   renderThreads(state.panel.body, threads, {
     hideEmpty: state.hideEmpty,
+    openIds: state.openIds,
+    onToggle: (rootId, open) => {
+      if (open) state.openIds.add(rootId);
+      else state.openIds.delete(rootId);
+    },
     onJump: (messageId) => {
       console.log('[ctv] jump requested', messageId);
     },
@@ -31,7 +38,8 @@ function boot() {
   state.stopObserver = startObserver({
     onChange: refresh,
     onRoomChange: () => {
-      // ルームが変わったら前ルームの表示を残さない。
+      // ルームが変わったら前ルームの表示も開閉状態も残さない。
+      state.openIds.clear();
       state.panel.body.textContent = '';
       refresh();
     },

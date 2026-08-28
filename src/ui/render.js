@@ -61,10 +61,13 @@ function buildNode(node, onJump) {
   return wrapper;
 }
 
-function buildCard(thread, onJump) {
+function buildCard(thread, onJump, openIds, onToggle) {
   const card = el('details', 'thread');
   card.dataset.role = 'thread';
   card.dataset.rootId = thread.rootId;
+  // 再描画で DOM は作り直されるため、開閉状態は呼び出し側が持つ集合から復元する。
+  if (openIds && openIds.has(thread.rootId)) card.open = true;
+  card.addEventListener('toggle', () => onToggle(thread.rootId, card.open));
 
   const summary = el('summary', 'thread__summary');
   summary.append(
@@ -91,10 +94,11 @@ function buildCard(thread, onJump) {
  * スレッド一覧を container に描画する。呼ぶたびに中身を作り直す。
  * @param {HTMLElement} container
  * @param {import('../core/types.js').Thread[]} threads
- * @param {{hideEmpty: boolean, onJump: (messageId: string) => void}} options
+ * @param {{hideEmpty: boolean, onJump: (messageId: string) => void,
+ *   openIds?: Set<string>, onToggle?: (rootId: string, open: boolean) => void}} options
  */
 export function renderThreads(container, threads, options) {
-  const { hideEmpty, onJump } = options;
+  const { hideEmpty, onJump, openIds = null, onToggle = () => {} } = options;
   container.textContent = '';
 
   if (!threads || threads.length === 0) {
@@ -110,7 +114,7 @@ export function renderThreads(container, threads, options) {
 
   const list = el('div', 'thread-list');
   for (const thread of visible) {
-    list.appendChild(buildCard(thread, onJump));
+    list.appendChild(buildCard(thread, onJump, openIds, onToggle));
   }
   container.appendChild(list);
 }

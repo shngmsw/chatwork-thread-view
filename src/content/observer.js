@@ -17,14 +17,16 @@ export function startObserver(options) {
   let stopped = false;
   let roomId = getCurrentRoomId();
 
-  const observer = new MutationObserver(() => {
+  function schedule() {
     if (stopped) return;
     if (timer !== null) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = null;
       onChange();
     }, debounceMs);
-  });
+  }
+
+  const observer = new MutationObserver(schedule);
 
   function connect() {
     if (stopped) return;
@@ -33,6 +35,9 @@ export function startObserver(options) {
     observer.disconnect();
     observer.observe(timeline, { childList: true, subtree: true });
     observed = timeline;
+    // 監視を始めた時点で既に描画済みのメッセージは mutation を起こさない。
+    // 接続のたびに 1 回解析を促さないと、次の新着まで表示が更新されない。
+    schedule();
   }
 
   // Chatwork はルーム切替でタイムライン要素ごと差し替えることがあるため、
