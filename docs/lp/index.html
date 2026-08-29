@@ -372,7 +372,7 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
           </svg>
           Chrome ウェブストアで追加
         </a>
-        <span class="btn btn--wait" id="storeWait">Chrome ウェブストアに申請準備中</span>
+        <span class="btn btn--wait" id="storeWait">Chrome ウェブストアで審査中</span>
         <a class="btn btn--ghost" id="repoBtn" href="#" hidden>
           <svg class="btn__icon" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
             <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
@@ -637,8 +637,8 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
    実物に無いもの (話題名の見出し、パネル内の返信元チップ) は出さない。
    ------------------------------------------------------------------ */
 
-// 公開後、ここに URL を入れるとリンクが有効になる。
-// 空のあいだは「公開しています」と書かない。書けば嘘になる。
+// 審査が通ったら、ここにストアの URL を入れるとボタンが有効になる。
+// 空のあいだは「審査中」の表示のままで、押せるリンクは出さない。
 const STORE_URL = '';
 const REPO_URL = 'https://github.com/shngmsw/chatwork-thread-view';
 
