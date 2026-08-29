@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>スレッドビュー for Chatwork</title>
+<meta name="description" content="Chatwork の返信関係を解析し、会話をスレッドツリーで表示する Chrome 拡張機能。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* ---------------------------------------------------------------
+   トークン。ライトを基準に定義し、ダークは同じ変数を差し替えるだけ。
+   色を [data-theme] やメディアクエリの中だけで定義しない。
+   --------------------------------------------------------------- */
+:root {
+  --ground: #f1f4f3;
+  --surface: #ffffff;
+  --surface-sunk: #e9eeec;
+  --ink: #0c1a19;
+  --muted: #5d6f6c;
+  --faint: #8b9c99;
+  --line: #dbe3e1;
+  --line-strong: #c3cfcc;
+  --accent: #0d7b74;
+  --accent-ink: #06514c;
+  --accent-wash: #e2f0ee;
+  --stray: #6d6684;
+  --stray-wash: #eceaf1;
+  --shadow: 0 1px 2px rgba(12, 26, 25, 0.06), 0 8px 24px rgba(12, 26, 25, 0.05);
+  --shadow-lift: 0 2px 6px rgba(12, 26, 25, 0.08), 0 18px 48px rgba(12, 26, 25, 0.10);
+
+  --display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+
+  --measure: 34rem;
+  --step: clamp(1rem, 0.6rem + 1.4vw, 1.4rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0a1012;
+    --surface: #111a1c;
+    --surface-sunk: #0d1517;
+    --ink: #e7efee;
+    --muted: #94a6a4;
+    --faint: #6d807e;
+    --line: #1f2b2e;
+    --line-strong: #314245;
+    --accent: #35b5aa;
+    --accent-ink: #6ad3c8;
+    --accent-wash: #102a29;
+    --stray: #9a92b4;
+    --stray-wash: #1b1a26;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.45);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0a1012;
+  --surface: #111a1c;
+  --surface-sunk: #0d1517;
+  --ink: #e7efee;
+  --muted: #94a6a4;
+  --faint: #6d807e;
+  --line: #1f2b2e;
+  --line-strong: #314245;
+  --accent: #35b5aa;
+  --accent-ink: #6ad3c8;
+  --accent-wash: #102a29;
+  --stray: #9a92b4;
+  --stray-wash: #1b1a26;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+.wrap { width: min(100% - 2.5rem, 60rem); margin-inline: auto; }
+.prose { max-width: var(--measure); }
+
+h1, h2, h3 {
+  font-family: var(--display); font-weight: 800;
+  text-wrap: balance; line-height: 1.35; margin: 0;
+  /* 日本語は文節で折る。対応していないブラウザは通常の折り返しに戻る。 */
+  word-break: auto-phrase;
+}
+p { margin: 0; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+/* ---- hero ---- */
+.hero { padding: clamp(3.5rem, 8vw, 6.5rem) 0 clamp(2rem, 4vw, 3rem); }
+.hero__grid { display: grid; gap: clamp(2rem, 5vw, 3.5rem); }
+@media (min-width: 62rem) {
+  .hero__grid { grid-template-columns: minmax(0, 27rem) minmax(0, 1fr); align-items: start; }
+}
+.hero__title {
+  font-size: clamp(2.1rem, 1.2rem + 3.4vw, 3.4rem);
+  letter-spacing: -0.01em;
+  margin-top: 0.7rem;
+}
+.hero__title em { font-style: normal; color: var(--accent-ink); }
+.hero__lede { margin-top: 1.2rem; color: var(--muted); font-size: 1.02rem; }
+.hero__meta {
+  margin-top: 1.8rem;
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+}
+.chip {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+  background: var(--surface);
+}
+.chip--on { border-color: transparent; background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
+
+/* ---- demo ---- */
+.demo {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+}
+.demo__bar {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-sunk);
+}
+.demo__label { font-family: var(--mono); font-size: 0.7rem; color: var(--faint); letter-spacing: 0.06em; }
+.seg {
+  margin-left: auto;
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+}
+.seg__btn {
+  font: inherit; font-size: 0.76rem; font-weight: 500;
+  padding: 0.24rem 0.85rem;
+  border: 0; border-radius: 999px;
+  background: transparent; color: var(--muted);
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+.seg__btn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+
+.stream { padding: 0.9rem 1rem 1.2rem; display: flex; flex-direction: column; }
+.msg {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  gap: 0.6rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 9px;
+  will-change: transform;
+}
+.msg__dot {
+  width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 0.68rem; font-weight: 700; color: #fff;
+  font-family: var(--body);
+}
+.msg__name { font-size: 0.78rem; font-weight: 700; }
+.msg__text { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+.msg__tag {
+  font-family: var(--mono); font-size: 0.62rem;
+  padding: 0.05rem 0.45rem; border-radius: 999px;
+  background: var(--stray-wash); color: var(--stray);
+  margin-left: 0.4rem;
+}
+
+/* フラット表示: 返信先が文字でしか分からない状態 */
+.stream[data-mode="flat"] .msg { margin-left: 0; }
+.stream[data-mode="flat"] .thread-head { display: none; }
+
+/* スレッド表示: 階層に沿って字下げし、ガイド線でつなぐ */
+.stream[data-mode="thread"] .msg[data-depth="1"] { margin-left: 1.4rem; }
+.stream[data-mode="thread"] .msg[data-depth="2"] { margin-left: 2.8rem; }
+.stream[data-mode="thread"] .msg[data-depth="1"]::before,
+.stream[data-mode="thread"] .msg[data-depth="2"]::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem; top: -0.15rem; bottom: 0.45rem;
+  border-left: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  width: 0.6rem;
+  border-bottom-left-radius: 7px;
+  animation: draw 320ms ease both;
+}
+@keyframes draw { from { opacity: 0; transform: scaleY(0.4); transform-origin: top; } to { opacity: 1; transform: none; } }
+.thread-head {
+  display: flex; align-items: baseline; gap: 0.55rem;
+  padding: 0.85rem 0.5rem 0.2rem;
+  font-family: var(--mono); font-size: 0.66rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--faint);
+}
+.thread-head::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.stream[data-mode="thread"] .msg[data-depth="0"] { background: var(--accent-wash); }
+
+/* ---- sections ---- */
+section { padding: clamp(3rem, 7vw, 5rem) 0; }
+.section-head { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 2.2rem; }
+.section-head h2 { font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.1rem); }
+.body-copy { color: var(--muted); font-size: 1rem; }
+.body-copy + .body-copy { margin-top: 1.1rem; }
+
+.rule { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+/* 見出しを左に固定し、本文を右へ流す。片側が空いたまま伸びるのを防ぐ。 */
+.split { display: grid; gap: 2rem; }
+@media (min-width: 62rem) {
+  .split {
+    grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
+    gap: clamp(3rem, 6vw, 5rem);
+    align-items: start;
+  }
+  .split .section-head { margin-bottom: 0; position: sticky; top: 2.5rem; }
+}
+
+/* ---- steps (本当に順序があるものにだけ番号を振る) ---- */
+.steps { display: grid; gap: 1.6rem; counter-reset: step; }
+@media (min-width: 52rem) { .steps { grid-template-columns: repeat(3, 1fr); gap: 2rem; } }
+.step { display: grid; gap: 0.55rem; align-content: start; }
+.step__n {
+  counter-increment: step;
+  font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+  color: var(--accent-ink);
+}
+.step__n::before { content: counter(step, decimal-leading-zero); }
+.step h3 { font-size: 1.05rem; font-weight: 600; }
+.step p { font-size: 0.92rem; color: var(--muted); }
+
+/* ---- privacy ---- */
+.privacy { background: var(--surface); border-block: 1px solid var(--line); }
+.claims { display: grid; gap: 0.1rem; margin-top: 1.8rem; }
+.claim {
+  display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: 0.8rem;
+  align-items: start;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--line);
+}
+.claim:last-child { border-bottom: 1px solid var(--line); }
+.claim__mark {
+  font-family: var(--mono); font-size: 0.95rem; line-height: 1.5;
+  color: var(--accent); font-weight: 600;
+}
+.claim__t { font-size: 0.95rem; font-weight: 500; }
+.claim__d { font-size: 0.85rem; color: var(--muted); margin-top: 0.15rem; }
+
+.code-note {
+  margin-top: 2rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 11px;
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 2;
+  color: var(--muted);
+  overflow-x: auto;
+}
+.code-note b { color: var(--ink); font-weight: 600; }
+
+/* ---- shots ---- */
+.shots { display: grid; gap: 1.2rem; }
+@media (min-width: 52rem) { .shots { grid-template-columns: 1fr 1fr; } }
+.shot img {
+  display: block; width: 100%; height: auto;
+  border-radius: 11px; border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.shot figcaption {
+  margin-top: 0.6rem;
+  font-family: var(--mono); font-size: 0.68rem;
+  letter-spacing: 0.08em; color: var(--faint);
+}
+
+/* ---- limits ---- */
+.limits { display: grid; gap: 1.1rem; }
+.limit { display: grid; gap: 0.3rem; padding-left: 1rem; border-left: 2px solid var(--line-strong); }
+.limit h3 { font-family: var(--body); font-size: 0.95rem; font-weight: 700; }
+.limit p { font-size: 0.9rem; color: var(--muted); }
+
+/* ---- policy ---- */
+.policy h3 { font-family: var(--body); font-size: 1rem; font-weight: 700; margin-top: 2rem; }
+.policy p, .policy li { font-size: 0.92rem; color: var(--muted); }
+.policy ul { margin: 0.6rem 0 0; padding-left: 1.2rem; display: grid; gap: 0.25rem; }
+.policy table { width: 100%; border-collapse: collapse; margin-top: 0.9rem; font-size: 0.88rem; }
+.policy th, .policy td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line); }
+.policy th { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.06em; color: var(--faint); font-weight: 600; }
+.policy td { color: var(--muted); }
+.table-scroll { overflow-x: auto; }
+
+/* ---- footer ---- */
+footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
+.disclaimer {
+  font-size: 0.85rem; color: var(--faint);
+  max-width: var(--measure);
+}
+.disclaimer strong { color: var(--muted); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero__grid">
+    <div>
+      <p class="eyebrow">Chrome 拡張機能</p>
+      <h1 class="hero__title">流れた会話を、<br><em>もう一度たどれる</em>ように。</h1>
+      <p class="hero__lede">
+        Chatwork のタイムラインは、複数の話題が時系列に混ざって流れていきます。
+        この拡張は表示中の返信関係を読み取り、会話をスレッドの木構造に組み直します。
+        「この返信、どれに対するものだったか」を探し直す必要がなくなります。
+      </p>
+      <div class="hero__meta">
+        <span class="chip chip--on">通信ゼロ</span>
+        <span class="chip">権限は storage のみ</span>
+        <span class="chip">ダークテーマ対応</span>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="demo__bar">
+        <span class="demo__label">同じ 8 件のメッセージ</span>
+        <div class="seg" role="group" aria-label="表示の切り替え">
+          <button class="seg__btn" type="button" data-mode="flat" aria-pressed="true">タイムライン</button>
+          <button class="seg__btn" type="button" data-mode="thread" aria-pressed="false">スレッド</button>
+        </div>
+      </div>
+      <div class="stream" id="stream" data-mode="flat"></div>
+    </div>
+  </div>
+</header>
+
+<hr class="rule">
+
+<section>
+  <div class="wrap">
+    <div class="section-head" style="max-width: var(--measure)">
+      <p class="eyebrow">仕組み</p>
+      <h2>ページを読むだけで、外には出さない。</h2>
+    </div>
+    <div class="steps">
+      <article class="step">
+        <span class="step__n"></span>
+        <h3>画面から読み取る</h3>
+        <p>表示中のタイムラインから、送信者・本文・時刻・返信先を読み取ります。API も通信も使いません。</p>
+      </article>
+      <article class="step">
+        <span class="step__n"></span>
+        <h3>親子関係を組み直す</h3>
+        <p>返信先をたどって根まで遡り、木構造を作ります。循環や親の欠落があっても壊れないようにしています。</p>
+      </article>
+      <article class="step">
+        <span class="step__n"></span>
+        <h3>横に並べて表示する</h3>
+        <p>右側のパネルに描画します。Chatwork 本体の CSS や JS とは Shadow DOM で隔離しています。</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="privacy">
+  <div class="wrap split">
+    <div class="section-head">
+      <p class="eyebrow">プライバシー</p>
+      <h2>送信するものが、ひとつもない。</h2>
+    </div>
+    <div>
+    <p class="body-copy">
+      この拡張にはバックエンドがありません。解析はすべてブラウザの中で完結します。
+      技術的に「送れない」設計であることを、次のかたちで担保しています。
+    </p>
+    <div class="claims">
+      <div class="claim">
+        <span class="claim__mark">—</span>
+        <div>
+          <p class="claim__t">通信するコードを含んでいません</p>
+          <p class="claim__d">ソース全体に fetch / XMLHttpRequest / WebSocket / sendBeacon が 1 箇所もありません。</p>
+        </div>
+      </div>
+      <div class="claim">
+        <span class="claim__mark">—</span>
+        <div>
+          <p class="claim__t">認証情報を扱いません</p>
+          <p class="claim__d">API トークンにもログイン情報にも触れません。読むのは画面に出ている内容だけです。</p>
+        </div>
+      </div>
+      <div class="claim">
+        <span class="claim__mark">—</span>
+        <div>
+          <p class="claim__t">メッセージを保存しません</p>
+          <p class="claim__d">端末に残すのはパネルの幅と開閉状態の 2 つだけ。拡張を削除すれば同時に消えます。</p>
+        </div>
+      </div>
+      <div class="claim">
+        <span class="claim__mark">—</span>
+        <div>
+          <p class="claim__t">解析ツールも広告も入れていません</p>
+          <p class="claim__d">利用統計、クラッシュレポート、テレメトリのいずれも組み込んでいません。</p>
+        </div>
+      </div>
+    </div>
+    <div class="code-note">
+      <b>権限:</b> storage<br>
+      <b>対象:</b> www.chatwork.com / kcw.kddi.ne.jp<br>
+      <b>その他:</b> service worker なし・リモートコードなし・外部依存なし
+    </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head prose">
+      <p class="eyebrow">画面</p>
+      <h2>本体のテーマに合わせて表示します。</h2>
+    </div>
+    <div class="shots">
+      <figure class="shot">
+        <img src="../store/assets/screenshot-1-dark.png" alt="ダークテーマでの表示。右側のパネルに 4 件のスレッドが並び、1 件が展開されて返信の入れ子構造が表示されている。" width="1280" height="800" loading="lazy">
+        <figcaption>ダークテーマ（サンプルデータ）</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="../store/assets/screenshot-2-light.png" alt="ライトテーマでの表示。同じスレッド一覧が明るい配色で表示されている。" width="1280" height="800" loading="lazy">
+        <figcaption>ライトテーマ（サンプルデータ）</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section>
+  <div class="wrap split">
+    <div class="section-head">
+      <p class="eyebrow">できないこと</p>
+      <h2>先に言っておきます。</h2>
+    </div>
+    <div class="limits">
+      <div class="limit">
+        <h3>読み込まれている範囲だけが対象です</h3>
+        <p>Chatwork は過去ログを順に読み込みます。上へスクロールして読み込んだ範囲でスレッドが復元されます。範囲外に親がある返信は、その旨を示したうえで単独のスレッドとして扱います。</p>
+      </div>
+      <div class="limit">
+        <h3>別ルームへの返信はそのルームで解決されます</h3>
+        <p>他のルームのメッセージへの返信は、そのルームを開いたときに親子として結びつきます。</p>
+      </div>
+      <div class="limit">
+        <h3>Chatwork の画面構造が変われば止まります</h3>
+        <p>画面から読み取る方式である以上、これは避けられません。動かなくなった場合はパネルに診断情報を表示し、原因の切り分けができるようにしています。</p>
+      </div>
+      <div class="limit">
+        <h3>返信の送信はできません</h3>
+        <p>この拡張は表示だけを行います。メッセージの送信・編集・削除は一切行いません。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="privacy" id="privacy-policy">
+  <div class="wrap prose policy">
+    <div class="section-head">
+      <p class="eyebrow">Privacy Policy</p>
+      <h2>プライバシーポリシー</h2>
+      <p class="body-copy">最終更新日: 2026年8月30日</p>
+    </div>
+
+    <p>本拡張は、いかなる情報も収集・送信・第三者提供しません。外部サーバーとの通信を行うコードを含んでおらず、すべての処理はお使いのブラウザの中だけで完結します。</p>
+
+    <h3>1. 本拡張が行う処理</h3>
+    <p>Chatwork のページを表示しているときにのみ動作し、次を行います。</p>
+    <ul>
+      <li>表示中のページから、送信者名・本文・時刻・返信先を読み取る</li>
+      <li>読み取った情報から返信の親子関係を組み立てる</li>
+      <li>組み立てた結果を、同じページ上のパネルに表示する</li>
+    </ul>
+    <p>いずれも画面に表示する目的でのみ行われ、読み取った内容がブラウザの外へ出ることはありません。</p>
+
+    <h3>2. 収集しない情報</h3>
+    <ul>
+      <li>氏名、メールアドレス、その他の個人を特定できる情報</li>
+      <li>メッセージの本文および添付ファイル</li>
+      <li>Chatwork のアカウント情報、API トークン、その他の認証情報</li>
+      <li>閲覧履歴、操作履歴、利用統計</li>
+      <li>IP アドレス、位置情報、端末識別子</li>
+    </ul>
+
+    <h3>3. 端末に保存する情報</h3>
+    <p>Chrome の storage 権限を用いて、次の 2 つのみを端末内に保存します。外部へ送信されることはなく、拡張機能を削除すると同時に消去されます。</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>保存する値</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>パネルの幅</td><td>数値（ピクセル）</td></tr>
+          <tr><td>パネルの開閉状態</td><td>開いている / 閉じている</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>4. 第三者への提供</h3>
+    <p>一切行いません。外部との通信を行わないため、提供先が存在しません。</p>
+
+    <h3>5. 権限を必要とする理由</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>権限</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>storage</td><td>上記のパネル表示設定を保存するため</td></tr>
+          <tr><td>www.chatwork.com</td><td>Chatwork の画面上で動作し、表示中のメッセージを読み取ってパネルを追加するため</td></tr>
+          <tr><td>kcw.kddi.ne.jp</td><td>KDDI が提供する Chatwork でも同様に動作するため</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>対象は Chatwork のサービス提供ドメインに限定しており、その他のサイトでは動作しません。</p>
+
+    <h3>6. 検証方法</h3>
+    <p>ソースコードは公開されています。fetch / XMLHttpRequest / WebSocket / EventSource / navigator.sendBeacon のいずれもソースコード中に存在しないことを確認できます。</p>
+
+    <h3>7. 本ポリシーの変更</h3>
+    <p>内容を変更する場合は、最終更新日を改めたうえで本ページに掲載します。収集する情報を増やす変更を行う場合は、事前に拡張機能の説明欄で告知します。</p>
+
+    <h3>8. お問い合わせ</h3>
+    <p>（サポート用の連絡先をここに記載してください）</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="disclaimer">
+      <strong>本拡張は Chatwork株式会社 の公式製品ではありません。</strong>
+      Chatwork は Chatwork株式会社 の登録商標です。名称に含まれる「for Chatwork」は、
+      対応するサービスを示すための表記です。本拡張の利用によって生じたいかなる損害についても、
+      開発者は責任を負いません。
+    </p>
+  </div>
+</footer>
+
+<script>
+/* ------------------------------------------------------------------
+   ヒーローのデモ。同じ 8 件が、時系列の並びからスレッドの木へ組み変わる。
+   並び替えは FLIP（旧位置を測る → 並べ替える → 差分だけ戻して解放）で
+   実際に動かす。この製品がやっていることそのものなので、静止画にしない。
+   ------------------------------------------------------------------ */
+const DATA = [
+  { id: 'a', name: '田中 美咲', hue: 208, text: '来週の定例、水曜15時に変更できますか。先方の都合が変わりました。', parent: null,  thread: 1, depth: 0 },
+  { id: 'b', name: '佐藤 健一', hue: 158, text: '水曜15時、こちらは問題ありません。',                                   parent: 'a',   thread: 1, depth: 1 },
+  { id: 'c', name: '鈴木 由紀', hue: 276, text: 'すみません、水曜は別件が入っています。木曜の同時刻ではどうでしょう。', parent: 'a',   thread: 1, depth: 1 },
+  { id: 'd', name: '高橋 誠',   hue: 22,  text: '請求書のテンプレートを更新しました。次回分から新しい方を。',           parent: null,  thread: 2, depth: 0 },
+  { id: 'e', name: '田中 美咲', hue: 208, text: '木曜15時で先方に確認します。少々お待ちください。',                     parent: 'c',   thread: 1, depth: 2 },
+  { id: 'f', name: '佐藤 健一', hue: 158, text: '振込手数料の欄は残す形で合っていますか。',                             parent: 'd',   thread: 2, depth: 1 },
+  { id: 'g', name: '鈴木 由紀', hue: 276, text: '問い合わせフォーム、ステージングに上げました。確認をお願いします。',   parent: null,  thread: 3, depth: 0 },
+  { id: 'h', name: '高橋 誠',   hue: 22,  text: '送信後の完了画面で、戻るボタンが二重に出ていました。',                 parent: 'g',   thread: 3, depth: 1 },
+];
+const THREAD_TITLE = { 1: '定例の日程', 2: '請求書テンプレート', 3: '問い合わせフォーム' };
+
+const stream = document.getElementById('stream');
+const byId = new Map(DATA.map((d) => [d.id, d]));
+const nodes = new Map();
+
+for (const d of DATA) {
+  const el = document.createElement('div');
+  el.className = 'msg';
+  el.dataset.id = d.id;
+  el.dataset.depth = String(d.depth);
+
+  const dot = document.createElement('div');
+  dot.className = 'msg__dot';
+  dot.style.background = `hsl(${d.hue} 38% 42%)`;
+  dot.textContent = d.name.slice(0, 1);
+
+  const main = document.createElement('div');
+  const nm = document.createElement('div');
+  nm.className = 'msg__name';
+  nm.textContent = d.name;
+  if (d.parent) {
+    const tag = document.createElement('span');
+    tag.className = 'msg__tag';
+    tag.textContent = '返信元: ' + byId.get(d.parent).name;
+    nm.appendChild(tag);
+  }
+  const tx = document.createElement('p');
+  tx.className = 'msg__text';
+  tx.textContent = d.text;
+  main.append(nm, tx);
+
+  el.append(dot, main);
+  nodes.set(d.id, el);
+}
+
+// スレッド表示のときだけ挟む見出し
+const heads = new Map();
+for (const t of Object.keys(THREAD_TITLE)) {
+  const h = document.createElement('div');
+  h.className = 'thread-head';
+  h.textContent = THREAD_TITLE[t];
+  heads.set(Number(t), h);
+}
+
+const FLAT_ORDER = DATA.map((d) => d.id);
+const THREAD_ORDER = [1, 2, 3].flatMap((t) => DATA.filter((d) => d.thread === t).map((d) => d.id));
+
+function layout(mode) {
+  const frag = document.createDocumentFragment();
+  if (mode === 'flat') {
+    for (const id of FLAT_ORDER) frag.appendChild(nodes.get(id));
+  } else {
+    let current = null;
+    for (const id of THREAD_ORDER) {
+      const d = byId.get(id);
+      if (d.thread !== current) {
+        current = d.thread;
+        frag.appendChild(heads.get(current));
+      }
+      frag.appendChild(nodes.get(id));
+    }
+  }
+  stream.dataset.mode = mode;
+  stream.appendChild(frag);
+}
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+
+function setMode(mode) {
+  if (stream.dataset.mode === mode) return;
+
+  if (reduced.matches) {
+    layout(mode);
+  } else {
+    const before = new Map();
+    for (const [id, el] of nodes) before.set(id, el.getBoundingClientRect());
+
+    layout(mode);
+
+    for (const [id, el] of nodes) {
+      const f = before.get(id);
+      const l = el.getBoundingClientRect();
+      const dx = f.left - l.left;
+      const dy = f.top - l.top;
+      if (!dx && !dy) continue;
+      el.style.transition = 'none';
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+    // 位置を戻したことを確定させてから解放する
+    void stream.offsetWidth;
+    for (const el of nodes.values()) {
+      el.style.transition = 'transform 460ms cubic-bezier(0.22, 0.61, 0.28, 1)';
+      el.style.transform = '';
+    }
+  }
+
+  for (const btn of document.querySelectorAll('.seg__btn')) {
+    btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode));
+  }
+}
+
+for (const btn of document.querySelectorAll('.seg__btn')) {
+  btn.addEventListener('click', () => setMode(btn.dataset.mode));
+}
+
+layout('flat');
+
+// 一度だけ、自分から組み変わってみせる。何をする拡張かが一目で伝わるように。
+if (!reduced.matches) {
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      io.disconnect();
+      setTimeout(() => setMode('thread'), 700);
+    }
+  }, { threshold: 0.5 });
+  io.observe(stream);
+}
+</script>
+</body>
+</html>
