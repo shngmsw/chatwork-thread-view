@@ -6,71 +6,303 @@
 <style>
   /*
    * Chrome Web Store のスクリーンショットは 1280 x 800。
-   * この枠を画面キャプチャして提出する。
+   * この枠を画面キャプチャして提出する。LP 用には同じものを 2 倍で撮る。
    *
-   * 左側はサンプルの会話一覧。特定サービスの画面を模したものではなく、
-   * パネルの表示内容と対応させるための背景として置いている。
+   * 左側は Chatwork の画面を模した背景。配色と寸法は実際の画面から
+   * 取ったが、会話・氏名・ルーム名はすべて架空。実データは使わない。
+   * ロゴマークは商標なので置いていない。
+   *
+   * 右側 (#panelHost) だけが本物で、src/ui の実装をそのまま描画している。
    */
   html, body { margin: 0; padding: 0; background: #20272c; }
   body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
   .shot {
     width: 1280px;
     height: 800px;
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-rows: 44px minmax(0, 1fr);
     overflow: hidden;
-    font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
     position: relative;
+    font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
   }
-  .shot[data-theme="dark"] { background: #10151a; color: #e4ecee; }
-  .shot[data-theme="light"] { background: #ffffff; color: #0e1a1b; }
 
+  /* 実際の画面から拾った配色。ライトを基準に、ダークで差し替える。 */
+  .shot {
+    --top:         #13202f;
+    --top-dim:     #8fa4b8;
+    --side:        #ebeff4;
+    --side-active: #dbe7f4;
+    --side-text:   #24343f;
+    --head:        #ffffff;
+    --feed:        #f8fafc;
+    --compose:     #ffffff;
+    --text:        #1b282d;
+    --dim:         #5c7173;
+    --faint:       #93a4ad;
+    --line:        #dde4ea;
+    --line-soft:   #e7ecf1;
+    --re-bg:       #47b79f;
+    --re-label:    #ffffff;
+    --re-side:     #ffffff;
+    --re-side-tx:  #1f7a68;
+    --link:        #1878c8;
+    --btn-line:    #c6d0d9;
+  }
+  .shot[data-theme="dark"] {
+    --top:         #13202f;
+    --top-dim:     #8fa4b8;
+    --side:        #0d1723;
+    --side-active: #0a275a;
+    --side-text:   #d6e0e8;
+    --head:        #182d46;
+    --feed:        #13202f;
+    --compose:     #182d46;
+    --text:        #e4ecee;
+    --dim:         #93a8b4;
+    --faint:       #6b7f8a;
+    --line:        #24384f;
+    --line-soft:   #1c2e42;
+    --re-bg:       #00856a;
+    --re-label:    #ffffff;
+    --re-side:     #0f2436;
+    --re-side-tx:  #6fd8bd;
+    --link:        #6fb8f0;
+    --btn-line:    #3a5670;
+  }
+
+  .shot { background: var(--feed); color: var(--text); }
+
+  /* ---- 上部の共通バー ---- */
+  .top {
+    background: var(--top);
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 14px;
+    color: #fff;
+  }
+  .top__mark {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: #38506a; flex: 0 0 auto;
+  }
+  .top__search {
+    width: 360px; height: 26px; border-radius: 5px;
+    background: #fff; color: #90a0ad;
+    display: flex; align-items: center; gap: 7px;
+    padding: 0 10px; font-size: 12px;
+  }
+  .top__icons { margin-left: auto; display: flex; align-items: center; gap: 16px; color: var(--top-dim); }
+  .top__hint { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+  .top__me { display: flex; align-items: center; gap: 7px; margin-left: 6px; font-size: 12px; color: #dbe4ec; }
+  .top svg { display: block; }
+
+  /* ---- 三分割 ---- */
+  .main { display: grid; grid-template-columns: 224px minmax(0, 1fr) 360px; min-height: 0; }
+
+  /* ---- 左: ルーム一覧 ---- */
+  .side {
+    background: var(--side); color: var(--side-text);
+    display: flex; flex-direction: column; min-height: 0;
+    border-right: 1px solid var(--line);
+  }
+  .side__tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
+  .side__tab {
+    padding: 7px 0 6px; text-align: center; font-size: 10.5px; color: var(--dim);
+    display: grid; justify-items: center; gap: 1px;
+  }
+  .side__tab--on { background: var(--side-active); color: var(--side-text); font-weight: 600; }
+  .side__cat {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 10px; font-size: 11.5px; color: var(--dim);
+  }
+  .side__list { overflow: hidden; padding-bottom: 8px; }
+  .side__group { font-size: 11px; color: var(--dim); padding: 7px 10px 3px; }
+  .side__room {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 10px; font-size: 12px;
+    white-space: nowrap; overflow: hidden;
+  }
+  .side__room--on { background: var(--side-active); border-radius: 5px; margin: 0 5px; font-weight: 600; }
+  .side__av { width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto; }
+  .side__name { overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---- 中央: ルーム ---- */
+  /* 発言一覧が伸びても入力欄を押し出さないよう、行を 3 つに固定して
+     真ん中だけを縮ませる。min-height: 0 が無いと grid の子は縮まない。 */
+  .room {
+    display: grid; grid-template-rows: 42px minmax(0, 1fr) auto;
+    min-width: 0; min-height: 0; background: var(--feed);
+  }
+  .room__head {
+    display: flex; align-items: center; gap: 9px;
+    padding: 0 12px; background: var(--head);
+    border-bottom: 1px solid var(--line);
+  }
+  .room__av { width: 24px; height: 24px; border-radius: 50%; background: #6d8ba8; flex: 0 0 auto; }
+  .room__title { font-size: 14px; font-weight: 700; white-space: nowrap; }
+  .room__members { margin-left: auto; display: flex; align-items: center; }
+  .room__members .mem {
+    width: 22px; height: 22px; border-radius: 50%; margin-left: -5px;
+    border: 2px solid var(--head);
+    display: grid; place-items: center; color: #fff; font-size: 9px; font-weight: 700;
+  }
+  .room__invite {
+    font-size: 11.5px; padding: 2px 9px; border-radius: 4px;
+    border: 1px solid var(--btn-line); color: var(--dim); margin-left: 8px;
+  }
+  .room__tools { display: flex; align-items: center; gap: 12px; margin-left: 12px; color: var(--faint); }
+
+  /* ---- 中央: 発言一覧 ---- */
   .feed {
-    padding: 28px 30px 84px;
-    overflow: hidden;
-    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 80%, transparent 96%);
-            mask-image: linear-gradient(to bottom, #000 0, #000 80%, transparent 96%);
+    padding: 14px 0 26px;
+    min-height: 0; overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 84%, transparent 99%);
+            mask-image: linear-gradient(to bottom, #000 0, #000 84%, transparent 99%);
   }
-  .feed__room {
-    font-size: 15px; font-weight: 600; margin: 0 0 20px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .feed__dot { width: 9px; height: 9px; border-radius: 50%; background: #34b6ab; }
-  .msg { display: flex; gap: 12px; margin-bottom: 18px; }
+  .daysep { text-align: center; font-size: 11px; color: var(--faint); margin: 10px 0 12px; }
+  .msg { display: flex; gap: 10px; padding: 7px 16px 9px; }
   .msg__av {
-    width: 34px; height: 34px; border-radius: 50%; flex: 0 0 auto;
+    width: 32px; height: 32px; border-radius: 50%; flex: 0 0 auto;
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 13px; font-weight: 700;
+    color: #fff; font-size: 12px; font-weight: 700;
   }
-  .msg__main { min-width: 0; }
-  .msg__head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px; }
-  .msg__name { font-size: 13px; font-weight: 600; }
-  .msg__time { font-size: 11px; opacity: 0.5; }
+  .msg__main { min-width: 0; flex: 1 1 auto; }
+  .msg__head { display: flex; align-items: baseline; gap: 8px; }
+  .msg__name { font-size: 12.5px; font-weight: 700; }
+  .msg__org { font-size: 11px; color: var(--faint); }
+  .msg__time { margin-left: auto; font-size: 11px; color: var(--faint); white-space: nowrap; }
   .msg__re {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 11px; padding: 1px 8px; border-radius: 999px;
-    margin-bottom: 4px;
+    display: inline-flex; align-items: center; gap: 6px;
+    margin: 3px 0 3px; font-size: 11px;
   }
-  .shot[data-theme="dark"] .msg__re { background: #1c2429; color: #96a8ab; }
-  .shot[data-theme="light"] .msg__re { background: #eef3f3; color: #5c7173; }
-  .msg__body { font-size: 13px; line-height: 1.75; opacity: 0.92; }
-  .msg--hl { border-radius: 8px; padding: 8px 10px; margin-left: -10px; }
-  .shot[data-theme="dark"] .msg--hl { background: rgba(52, 182, 171, 0.14); }
-  .shot[data-theme="light"] .msg--hl { background: rgba(15, 138, 131, 0.10); }
+  .msg__reChip {
+    display: inline-flex; align-items: stretch;
+    border-radius: 3px; overflow: hidden; line-height: 1.6;
+  }
+  .msg__reChip b { background: var(--re-bg); color: var(--re-label); font-weight: 700; padding: 0 5px; }
+  .msg__reChip span { background: var(--re-side); color: var(--re-side-tx); padding: 0 6px; }
+  .msg__reAv { width: 17px; height: 17px; border-radius: 50%; display: inline-block; }
+  .msg__reName { color: var(--dim); }
+  .msg__body { font-size: 13px; line-height: 1.8; white-space: pre-line; }
+  .msg__link { color: var(--link); word-break: break-all; }
+
+  /* 実物と同じ強調。src/content/navigator.js の値をそのまま使う。 */
+  .msg--hl { background-color: rgba(12, 107, 107, 0.14); }
+
+  /* ---- 中央: 入力欄 ---- */
+  .compose { background: var(--compose); border-top: 1px solid var(--line); padding: 7px 12px 12px; }
+  .compose__tools { display: flex; align-items: center; gap: 14px; color: var(--faint); padding-bottom: 7px; }
+  .compose__send { margin-left: auto; display: flex; align-items: center; gap: 9px; font-size: 11.5px; color: var(--dim); }
+  .compose__btn {
+    border: 1px solid var(--btn-line); border-radius: 4px;
+    padding: 1px 14px; color: var(--faint); font-size: 11.5px;
+  }
+  .compose__box {
+    border: 1px solid var(--btn-line); border-radius: 4px;
+    padding: 8px 10px; height: 62px;
+    color: var(--faint); font-size: 12px; line-height: 1.6;
+  }
+
+  /* ---- 右: 本物のパネル ---- */
+  #panelHost { min-width: 0; }
 
   .caption {
-    position: absolute; left: 30px; bottom: 16px;
+    position: absolute; right: 374px; bottom: 150px;
     font-size: 11px; padding: 3px 10px; border-radius: 999px;
   }
   .shot[data-theme="dark"] .caption { background: #1c2429; color: #96a8ab; }
   .shot[data-theme="light"] .caption { background: #eef3f3; color: #5c7173; }
-  #panelHost { height: 800px; }
 </style>
 </head>
 <body>
   <div class="shot" data-theme="dark" id="shot">
-    <div class="feed" id="feed"></div>
-    <div id="panelHost"></div>
+
+    <header class="top">
+      <span class="top__mark"></span>
+      <span class="top__search">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        チャット名、メッセージ内容を検索
+      </span>
+      <span class="top__icons">
+        <span class="top__hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2Z"/></svg>
+          ヒント
+        </span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M17 8.5a2.8 2.8 0 1 0 0-.1M18 19c0-2-1-3.6-2.6-4.4"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="6" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="18" cy="6" r="1.7"/><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/><circle cx="6" cy="18" r="1.7"/><circle cx="12" cy="18" r="1.7"/><circle cx="18" cy="18" r="1.7"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.1"/></svg>
+        <span class="top__me">
+          <span class="msg__av" style="width:22px;height:22px;font-size:9px;background:#4a6f9c">山</span>
+          山田 太郎
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="m4 8 8 9 8-9Z"/></svg>
+        </span>
+      </span>
+    </header>
+
+    <div class="main">
+
+      <aside class="side">
+        <div class="side__tabs">
+          <div class="side__tab side__tab--on">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-5.2A8 8 0 1 1 21 12Z"/></svg>
+            チャット
+          </div>
+          <div class="side__tab">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v10H8l-4 4Z"/></svg>
+            自分宛て
+          </div>
+          <div class="side__tab">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4.5L6 21Z"/></svg>
+            ブックマーク
+          </div>
+        </div>
+        <div class="side__cat">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/></svg>
+          カテゴリー｜すべての…
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="m4 8 8 9 8-9Z"/></svg>
+        </div>
+        <div class="side__list" id="sideList"></div>
+      </aside>
+
+      <section class="room">
+        <div class="room__head">
+          <span class="room__av"></span>
+          <span class="room__title">プロジェクト連絡</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" style="color:var(--faint)"><path d="M12 15v6M8 3h8l-1.2 6.4 2.7 2.6v1.2H6.5V12l2.7-2.6Z"/></svg>
+          <span class="room__members" id="roomMembers"></span>
+          <span class="room__invite">招待</span>
+          <span class="room__tools">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg>
+          </span>
+        </div>
+
+        <div class="feed" id="feed"></div>
+
+        <div class="compose">
+          <div class="compose__tools">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5v.1M15 9.5v.1"/></svg>
+            <span style="font-size:11.5px;font-weight:700">TO</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11.5 12.5 19a5 5 0 0 1-7-7l8-8a3.5 3.5 0 0 1 5 5l-8 8a2 2 0 0 1-3-3l7.5-7.5"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 12 6-3.5v7Z"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18M6 6l12 12M18 6 6 18" transform="scale(0.7) translate(5 5)"/></svg>
+            <span class="compose__send">
+              <span>☑ Enterで送信</span>
+              <span class="compose__btn">送信</span>
+            </span>
+          </div>
+          <div class="compose__box">ここにメッセージ内容を入力<br>(Shift + Enterキーで改行)</div>
+        </div>
+      </section>
+
+      <div id="panelHost"></div>
+    </div>
+
     <div class="caption">架空のサンプルです</div>
   </div>
 
@@ -80,7 +312,7 @@ import { renderThreads } from '../../src/ui/render.js';
 import { buildThreads } from '../../src/core/threadTree.js';
 
 // ---- サンプルデータ ----
-// 名前は架空。見本として使われる形にして、実在の人物と取り違えられないようにする。
+// 名前も会話も架空。見本として使われる形にして、実在の人物と取り違えられないようにする。
 const now = Math.floor(Date.now() / 1000);
 const m = (id, name, aid, body, replyToId, minutesAgo) => ({
   id, roomId: 'R1', accountId: aid, userName: name, avatarUrl: '',
@@ -108,60 +340,115 @@ const messages = [
   m('14', '鈴木 花子', 'a2', '設計レビューの進め方を扱ってほしいです。', '13', 9),
 ];
 
-// ---- 左側の会話一覧 ----
-const byId = new Map(messages.map((x) => [x.id, x]));
-const color = (seed) => {
-  let h = 0;
-  for (let i = 0; i < seed.length; i += 1) h = (h * 31 + seed.charCodeAt(i)) % 360;
-  return `hsl(${h}, 42%, 42%)`;
-};
-const fmt = (t) => {
-  const d = new Date(t * 1000);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-};
-const feed = document.getElementById('feed');
-const room = document.createElement('p');
-room.className = 'feed__room';
-const dot = document.createElement('span');
-dot.className = 'feed__dot';
-room.append(dot, document.createTextNode('プロジェクト連絡'));
-feed.appendChild(room);
+// 所属ラベル。Chatwork は社外の相手に組織名を出すので、それも架空のものを置く。
+const ORG = { a3: 'サンプル商事', a4: 'サンプル商事' };
 
-for (const msg of messages.slice(5)) {
-  const row = document.createElement('div');
-  row.className = msg.id === '11' ? 'msg msg--hl' : 'msg';
-  const av = document.createElement('div');
-  av.className = 'msg__av';
-  av.style.background = color(msg.accountId);
-  av.textContent = msg.userName.slice(0, 1);
-  const main = document.createElement('div');
-  main.className = 'msg__main';
-  const head = document.createElement('div');
-  head.className = 'msg__head';
-  const nm = document.createElement('span');
-  nm.className = 'msg__name';
-  nm.textContent = msg.userName;
-  const tm = document.createElement('span');
-  tm.className = 'msg__time';
-  tm.textContent = fmt(msg.timestamp);
-  head.append(nm, tm);
-  main.appendChild(head);
-  if (msg.replyToId) {
-    const re = document.createElement('span');
-    re.className = 'msg__re';
-    re.textContent = `返信元: ${byId.get(msg.replyToId).userName}`;
-    main.appendChild(re);
-    main.appendChild(document.createElement('br'));
+const byId = new Map(messages.map((x) => [x.id, x]));
+// アイコンの色。自動生成だと色相が固まって見分けが付かないので手で振る。
+const HUES = {
+  a1: 210, a2: 158, a3: 276, a4: 22,
+  r1: 196, r2: 42, r3: 128, r4: 322, r5: 250, r6: 8,
+};
+const color = (seed) => `hsl(${HUES[seed] ?? 205}, 40%, 45%)`;
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+const stamp = (t) => {
+  const d = new Date(t * 1000);
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return `${d.getMonth() + 1}月${d.getDate()}日（${WD[d.getDay()]}） ${hm}`;
+};
+const dayLabel = (t) => {
+  const d = new Date(t * 1000);
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+};
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+};
+const avatar = (cls, name, aid, size) => {
+  const n = el('div', cls, name.slice(0, 1));
+  n.style.background = color(aid);
+  if (size) {
+    n.style.width = `${size}px`;
+    n.style.height = `${size}px`;
   }
-  const bd = document.createElement('div');
-  bd.className = 'msg__body';
-  bd.textContent = msg.body;
-  main.appendChild(bd);
-  row.append(av, main);
+  return n;
+};
+
+// ---- 左のルーム一覧 (すべて架空の名前) ----
+const ROOMS = [
+  { group: '社内' },
+  { name: 'プロジェクト連絡', aid: 'r1', on: true },
+  { name: '全社アナウンス', aid: 'r2' },
+  { name: '開発チーム', aid: 'r3' },
+  { name: 'デザイン相談', aid: 'r4' },
+  { group: '取引先' },
+  { name: 'サンプル商事 様', aid: 'r5' },
+  { name: 'サンプル技研 様', aid: 'r6' },
+  { group: 'カテゴリー未分類のチャット' },
+  { name: 'マイチャット', aid: 'a1' },
+  { name: '鈴木 花子', aid: 'a2' },
+  { name: '佐藤 次郎', aid: 'a3' },
+  { name: '高橋 三郎', aid: 'a4' },
+];
+const sideList = document.getElementById('sideList');
+for (const r of ROOMS) {
+  if (r.group) {
+    sideList.appendChild(el('div', 'side__group', `▾ ${r.group}`));
+    continue;
+  }
+  const row = el('div', r.on ? 'side__room side__room--on' : 'side__room');
+  const av = el('span', 'side__av');
+  av.style.background = color(r.aid);
+  row.append(av, el('span', 'side__name', r.name));
+  sideList.appendChild(row);
+}
+
+// ---- ルームヘッダのメンバー ----
+const roomMembers = document.getElementById('roomMembers');
+for (const [name, aid] of [['山田 太郎', 'a1'], ['鈴木 花子', 'a2'], ['佐藤 次郎', 'a3'], ['高橋 三郎', 'a4']]) {
+  roomMembers.appendChild(avatar('mem', name, aid));
+}
+
+// ---- 中央の発言一覧 ----
+const feed = document.getElementById('feed');
+let lastDay = null;
+for (const msg of messages.slice(5)) {
+  const day = dayLabel(msg.timestamp);
+  if (day !== lastDay) {
+    feed.appendChild(el('div', 'daysep', day));
+    lastDay = day;
+  }
+
+  // 強調は 1 件だけ。実物もジャンプ先を 1 件だけ光らせる。
+  const row = el('div', msg.id === '11' ? 'msg msg--hl' : 'msg');
+  row.appendChild(avatar('msg__av', msg.userName, msg.accountId));
+
+  const main = el('div', 'msg__main');
+  const head = el('div', 'msg__head');
+  head.append(el('span', 'msg__name', msg.userName));
+  if (ORG[msg.accountId]) head.append(el('span', 'msg__org', ORG[msg.accountId]));
+  head.append(el('span', 'msg__time', stamp(msg.timestamp)));
+  main.appendChild(head);
+
+  if (msg.replyToId) {
+    const parent = byId.get(msg.replyToId);
+    const re = el('div', 'msg__re');
+    const chip = el('span', 'msg__reChip');
+    chip.append(el('b', null, '↩ RE'), el('span', null, '返信元'));
+    const reAv = el('span', 'msg__reAv');
+    reAv.style.background = color(parent.accountId);
+    re.append(chip, reAv, el('span', 'msg__reName', `${parent.userName}さん`));
+    main.appendChild(re);
+  }
+
+  main.appendChild(el('div', 'msg__body', msg.body));
+  row.appendChild(main);
   feed.appendChild(row);
 }
 
-// ---- 実物のパネル UI をそのまま描画する ----
+// ---- 右: 実物のパネル UI をそのまま描画する ----
 const host = document.getElementById('panelHost');
 const shadow = host.attachShadow({ mode: 'open' });
 const style = document.createElement('style');

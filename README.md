@@ -2,7 +2,7 @@
 
 Chatwork の返信をスレッド形式で構造化表示する Chrome 拡張です。
 
-**本拡張は Chatwork株式会社 の公式製品ではありません。** Chatwork は Chatwork株式会社 の商標です。
+**本拡張は 株式会社kubell の公式製品ではありません。** Chatwork は 株式会社kubell の商標です。
 名称に含まれる「for Chatwork」は、対応サービスを示すための表記です。
 
 ## できること
@@ -75,3 +75,46 @@ npm run test:watch
 Chatwork DOM への依存は `src/content/selectors.js` にのみ存在します。
 画面構造が変わった場合はこのファイルを修正してください。
 `runHealthCheck()` も同じファイルにあり、セレクタが噛み合っているかを検査します。
+
+## スクリーンショット
+
+`docs/store/screenshot.html` を描画したものです。**実際の Chatwork の画面は使いません。**
+氏名・ルーム名・会話はすべて架空で、実データを載せない前提で作っています。
+配色と寸法だけは実際の画面から測って合わせてあり、ロゴマークは商標なので置いていません。
+右側のパネルだけは本物で、`src/ui` の実装をそのまま読み込んで描画しています。
+
+ES モジュールを読むので `file://` では動きません。リポジトリのルートを HTTP で
+配信してから撮ってください。
+
+- ストア提出用 (1280x800): `docs/store/assets/screenshot-{1-dark,2-light}.png`
+- LP 用 (2560x1600): 同じ場所の `...@2x.png`
+
+```bash
+# 1 倍 (ストア提出用) は --force-device-scale-factor=1
+chrome --headless=new --disable-gpu --hide-scrollbars \
+  --force-device-scale-factor=2 --window-size=1280,800 \
+  --virtual-time-budget=8000 \
+  --screenshot=screenshot-1-dark@2x.png \
+  "http://localhost:8899/docs/store/screenshot.html"
+```
+
+ライトテーマは末尾に `?theme=light` を付けます。
+
+LP (`docs/lp/index.html`) は 2 倍の方だけを使い、うち 3 箇所は CSS で領域を切り出して
+拡大表示しています。切り出しの座標は 1280x800 に対する比率で `--w` `--x` `--y` に
+入っているので、モックの配置を変えたらこの 3 つを計算し直してください。
+
+### 実画面を載せる場合
+
+どうしても実際の画面を使う必要があるときは、`scripts/redact.mjs` で塗りつぶせます。
+
+```bash
+node scripts/redact.mjs 入力.png 出力.png 指定.json
+```
+
+指定 JSON は `{ "blocks": [{ "x": 0, "y": 100, "w": 280, "h": 1080, "size": 20 }] }` の形で、
+既定はモザイク、`"mode": "fill"` で単色塗りになります。
+
+ただし矩形を手で当てる方式は塗り残しが出ます。実際に試したところ、34 箇所を指定しても
+階層の深い行の氏名と、抜粋テキスト中の固有名詞が残りました。**実データを載せるのは
+避けてください。**

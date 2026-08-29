@@ -84,9 +84,9 @@ navigator.sendBeacon で検索すると、いずれも 1 件も見つかりま�
 
 ## 8. お問い合わせ
 
-（サポート用の連絡先をここに記載してください）
+本拡張についてのご連絡は shngmsw-ctv@yahoo.co.jp までお願いします。
 
 ---
 
-本拡張は Chatwork株式会社 の公式製品ではありません。
-Chatwork は Chatwork株式会社 の登録商標です。
+本拡張は 株式会社kubell の公式製品ではありません。
+Chatwork は 株式会社kubell の登録商標です。
