@@ -13,10 +13,10 @@
 | バージョン | 0.1.0 |
 | 言語 | 日本語 |
 | カテゴリ | ワークフローと計画 (Workflow & Planning) |
-| 公開範囲 | 未確定 (公開 / 限定公開 / 非公開) |
+| 公開範囲 | 公開 |
 | 料金 | 無料 |
-| デベロッパー名 | 未確定 (Web Store に表示される名前) |
-| サポート用メールアドレス | 未確定 |
+| デベロッパー名 | shngmsw (Web Store に「提供元」として表示される。アカウント全体の設定) |
+| サポート用メールアドレス | shngmsw-ctv@yahoo.co.jp |
 | ソースコード URL | https://github.com/shngmsw/chatwork-thread-view |
 | ホームページ URL | https://shngmsw.github.io/chatwork-thread-view/lp/ |
 | サポート URL | https://github.com/shngmsw/chatwork-thread-view/issues |
@@ -90,8 +90,8 @@ Chatwork のタイムラインは、複数の話題が時系列に混ざって�
 
 ■ ご利用にあたって
 
-本拡張は Chatwork株式会社 の公式製品ではありません。
-Chatwork は Chatwork株式会社 の登録商標です。
+本拡張は 株式会社kubell の公式製品ではありません。
+Chatwork は 株式会社kubell の登録商標です。
 名称に含まれる「for Chatwork」は、対応するサービスを示すための表記です。
 
 本拡張の利用によって生じたいかなる損害についても、開発者は責任を負いません。
@@ -183,9 +183,14 @@ Chatwork サービス用ドメインです)。外部への送信は一切行い�
 | ストアのアイコン | 必須 | 128 × 128 PNG | **`docs/store/assets/store-icon-128.png`** |
 | 拡張機能のアイコン | 必須 | 16/32/48/128 PNG | `icons/` (ZIP に同梱済み。個別アップロード不要) |
 | スクリーンショット | 必須 (1〜5 枚) | 1280 × 800 または 640 × 400 PNG | `docs/store/screenshot.html` から生成 |
-| 小さなプロモタイル | 推奨 | 440 × 280 PNG | 未確定 |
-| LP | 任意 | — | `docs/lp/index.html` (公開版は Artifact) |
-| マーキープロモタイル | 任意 | 1400 × 560 PNG | 未確定 |
+| 小さなプロモタイル | 任意 | 440 × 280 PNG | `docs/store/assets/promo-small-440x280.png` |
+| LP | 任意 | — | `docs/lp/index.html` |
+| マーキープロモタイル | 任意 | 1400 × 560 PNG | `docs/store/assets/promo-marquee-1400x560.png` |
+
+プロモタイルはダッシュボード上ではどちらも任意です (developer.chrome.com には
+小さい方が必須と書かれていますが、実際の入力欄では任意でした)。
+用意はしてあるので、載せるかどうかは任意で決めてください。
+生成元は `docs/store/promo-tile.html` です。
 
 **ストアのアイコンには `icons/128.png` ではなく `docs/store/assets/store-icon-128.png`
 を使ってください。** ストア側で影などの装飾が付くため、128 × 128 のうち図案は
@@ -204,25 +209,23 @@ Chatwork サービス用ドメインです)。外部への送信は一切行い�
 ## 公開前チェックリスト
 
 - [ ] `manifest.json` の `version` を確定する
-- [ ] デベロッパー名・サポート用メールアドレスを設定する
+- [ ] デベロッパー名を shngmsw に設定する（サポート用メールアドレスは shngmsw-ctv@yahoo.co.jp）
 - [ ] プライバシーポリシーを公開し、その URL をダッシュボードに登録する
 - [x] ソースコードを公開し、URL を LP・本ファイル・README・プライバシーポリシーに反映した
-- [ ] スクリーンショットをサンプルデータで撮影する (実データ厳禁)
+- [x] スクリーンショットをサンプルデータで撮影した (実データ厳禁)
 - [ ] 配布 ZIP に `node_modules` / `test` / `docs` / `.superpowers` を含めないことを確認する
-- [ ] 「Chatwork株式会社 の公式製品ではありません」の記載が説明文と LP の両方にあることを確認する
+- [ ] 「株式会社kubell の公式製品ではありません」の記載が説明文と LP の両方にあることを確認する
 
 ---
 
 ## LP（紹介ページ）
 
-- ソース: `docs/lp/index.html`（自己ホスト用。画像は `../store/assets/` を相対参照）
-- 公開版: https://claude.ai/code/artifact/e4c3c207-57be-4cf6-b462-94150064cd1b
-  （画像を data URI で埋め込んだ単一ファイル版）
+- ソース: `docs/lp/index.html`（画像は `../store/assets/` を相対参照）
+- 公開先: https://shngmsw.github.io/chatwork-thread-view/lp/ （GitHub Pages）
 
 プライバシーポリシーは LP 内の `#privacy-policy` に全文を掲載しています。
-Web Store のプライバシーポリシー URL にはこのアンカー付き URL を登録できます。
+Web Store のプライバシーポリシー URL にはこのアンカー付き URL を登録します。
 
-**注意: Artifact は既定で非公開です。** URL をストアに登録する前に、
-ページの共有メニューから公開状態に切り替えてください。非公開のままだと
-審査担当者がポリシーを閲覧できません。自社ドメインで公開する場合は
-`docs/lp/index.html` をそのまま設置してください。
+**審査に出す前に、この URL がブラウザで開けることを確認してください。**
+GitHub Pages が有効になっていない、あるいは公開元ブランチが `main` の
+`docs/` になっていないと 404 になり、審査担当者がポリシーを閲覧できません。

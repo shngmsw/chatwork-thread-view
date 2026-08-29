@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>スレッドビュー for Chatwork — プロモタイル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+  /*
+   * Chrome ウェブストアのプロモタイル。
+   *   小 (必須): 440 x 280   ?size=small  (既定)
+   *   マーキー (任意): 1400 x 560   ?size=marquee
+   *
+   * 公式の指針に従っている:
+   *   - 文字は最小限にする (ローカライズできず、縮小に弱いため)
+   *   - 淡いグレーの上に置かれる前提で、彩度の高い色を使う
+   *   - 枠いっぱいに描き、余白で終わらせない
+   *   - スクリーンショットの流用ではなく、何をするものかを図で示す
+   */
+  html, body { margin: 0; padding: 0; background: #efefef; }
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+  .tile {
+    width: 440px; height: 280px;
+    position: relative; overflow: hidden;
+    display: grid; align-content: center;
+    padding: 0 34px;
+    gap: 18px;
+    font-family: "Plus Jakarta Sans", "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", sans-serif;
+    color: #fff;
+    background:
+      radial-gradient(120% 130% at 10% 0%,   #26bcae 0%, transparent 55%),
+      radial-gradient(110% 110% at 92% 6%,   #3f76c9 0%, transparent 52%),
+      radial-gradient(130% 130% at 60% 108%, #073f3d 0%, transparent 60%),
+      linear-gradient(150deg, #0f8a83 0%, #0a3b45 100%);
+  }
+
+  .brand { display: flex; align-items: center; gap: 15px; position: relative; z-index: 1; }
+  /* アイコンは地の色と同系なので、白い台に載せて浮かせる。 */
+  .brand span {
+    background: #fff; border-radius: 17px; padding: 6px;
+    display: grid; place-items: center; flex: 0 0 auto;
+    box-shadow: 0 5px 16px rgba(0,0,0,.26);
+  }
+  .brand img { width: 52px; height: 52px; border-radius: 12px; display: block; }
+  .name { font-weight: 800; font-size: 27px; letter-spacing: -0.02em; line-height: 1.25; }
+  .name small { display: block; font-size: 14px; font-weight: 700; opacity: .72; letter-spacing: 0; }
+
+  /* 返信のつながりを表す図。文字を増やさずに機能を出す。 */
+  .tree { display: grid; gap: 7px; position: relative; z-index: 1; }
+  .tree i {
+    display: block; height: 9px; border-radius: 999px;
+    background: rgba(255,255,255,.9);
+  }
+  .tree i:nth-child(1) { width: 322px; }
+  .tree i:nth-child(2) { width: 258px; margin-left: 26px; background: rgba(255,255,255,.62); }
+  .tree i:nth-child(3) { width: 196px; margin-left: 52px; background: rgba(255,255,255,.46); }
+  .tree i:nth-child(4) { width: 276px; margin-left: 26px; background: rgba(255,255,255,.62); }
+
+  /* ---- マーキー (1400 x 560) ---- */
+  .tile[data-size="marquee"] {
+    width: 1400px; height: 560px;
+    grid-auto-flow: column;
+    grid-template-columns: auto auto;
+    align-items: center; justify-content: center;
+    align-content: center;
+    gap: 96px; padding: 0 90px;
+  }
+  .tile[data-size="marquee"] .brand { gap: 26px; }
+  .tile[data-size="marquee"] .brand span { border-radius: 34px; padding: 12px; }
+  .tile[data-size="marquee"] .brand img { width: 104px; height: 104px; border-radius: 24px; }
+  .tile[data-size="marquee"] .name { font-size: 54px; }
+  .tile[data-size="marquee"] .name small { font-size: 26px; margin-top: 4px; }
+  .tile[data-size="marquee"] .tree { gap: 15px; }
+  .tile[data-size="marquee"] .tree i { height: 18px; }
+  .tile[data-size="marquee"] .tree i:nth-child(1) { width: 300px; }
+  .tile[data-size="marquee"] .tree i:nth-child(2) { width: 226px; margin-left: 52px; }
+  .tile[data-size="marquee"] .tree i:nth-child(3) { width: 174px; margin-left: 104px; }
+  .tile[data-size="marquee"] .tree i:nth-child(4) { width: 244px; margin-left: 52px; }
+</style>
+</head>
+<body>
+  <div class="tile" id="tile">
+    <div class="brand">
+      <span><img src="../../icons/128.png" alt=""></span>
+      <p class="name">スレッドビュー<small>for Chatwork</small></p>
+    </div>
+    <div class="tree" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  </div>
+
+<script>
+// ?size=marquee で 1400x560 に切り替える。既定は小 (440x280)。
+const size = new URLSearchParams(location.search).get('size');
+if (size === 'marquee') document.getElementById('tile').dataset.size = 'marquee';
+
+// 撮影用。枠の外を塗り分けずに済むよう、余白を消して左上に寄せる。
+if (new URLSearchParams(location.search).get('shot') === '1') {
+  document.body.style.cssText = 'margin:0;padding:0;display:block';
+}
+</script>
+</body>
+</html>
