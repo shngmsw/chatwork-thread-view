@@ -18,7 +18,15 @@
 | デベロッパー名 | 未確定 (Web Store に表示される名前) |
 | サポート用メールアドレス | 未確定 |
 | ソースコード URL | https://github.com/shngmsw/chatwork-thread-view |
-| プライバシーポリシー URL | https://claude.ai/code/artifact/e4c3c207-57be-4cf6-b462-94150064cd1b#privacy-policy<br>※ 既定では非公開。ダッシュボードに登録する前に、ページの共有メニューから公開すること |
+| ホームページ URL | https://shngmsw.github.io/chatwork-thread-view/lp/ |
+| サポート URL | https://github.com/shngmsw/chatwork-thread-view/issues |
+| 公式 URL | 空欄でよい（ドメイン所有の確認を求められる欄。github.io は自分のドメインではないため無理に埋めない） |
+| プライバシーポリシー URL | https://shngmsw.github.io/chatwork-thread-view/lp/#privacy-policy |
+
+> **プライバシーポリシー URL は「ストアの掲載情報」タブには無い。**
+> 「プライバシー」タブ（単一用途・権限の justification と同じ画面）か、
+> 左メニューの「アカウント」にある。アカウント側にある場合は
+> 登録した 1 つの URL が全アイテムに適用される。
 
 ---
 
