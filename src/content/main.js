@@ -5,6 +5,7 @@ import { createScrapeContext, parseTimeline } from './scraper.js';
 import { buildThreads } from '../core/threadTree.js';
 import { startObserver } from './observer.js';
 import { jumpToMessage } from './navigator.js';
+import { TOGGLE_PANEL } from '../core/messages.js';
 
 const state = {
   panel: null,
@@ -163,8 +164,23 @@ export function teardown() {
   state.unhealthySince = null;
 }
 
+/**
+ * ツールバーのアイコンからパネルを開閉できるようにする。
+ * chrome が無い環境 (テスト) では何もしない。
+ */
+export function listenForToggle(runtime) {
+  if (!runtime || !runtime.onMessage) return;
+  runtime.onMessage.addListener((message) => {
+    if (!message || message.type !== TOGGLE_PANEL) return;
+    if (!state.panel) return;
+    state.panel.setOpen(!state.panel.isOpen());
+  });
+}
+
 export function getPanel() {
   return state.panel;
 }
+
+listenForToggle(typeof chrome !== 'undefined' ? chrome.runtime : null);
 
 boot();

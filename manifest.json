@@ -3,18 +3,29 @@
   "name": "スレッドビュー for Chatwork",
   "version": "0.1.0",
   "description": "Chatwork の返信をスレッド形式で構造化表示します。Chatwork株式会社の公式製品ではありません。",
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
     "https://www.chatwork.com/*",
     "https://kcw.kddi.ne.jp/*"
   ],
+  "action": {
+    "default_title": "スレッドビュー（クリックで開閉）"
+  },
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
   "content_scripts": [
     {
       "matches": [
         "https://www.chatwork.com/*",
         "https://kcw.kddi.ne.jp/*"
       ],
-      "js": ["src/content/loader.js"],
+      "js": [
+        "src/content/loader.js"
+      ],
       "run_at": "document_idle"
     }
   ],
@@ -28,6 +39,7 @@
         "src/content/navigator.js",
         "src/core/threadTree.js",
         "src/core/types.js",
+        "src/core/messages.js",
         "src/ui/panel.js",
         "src/ui/render.js",
         "src/ui/styles.js"

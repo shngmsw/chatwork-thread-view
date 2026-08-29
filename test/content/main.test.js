@@ -156,3 +156,45 @@ describe('未読み込みメッセージの通知', () => {
     expect(panelText()).toContain('まだ読み込まれていません');
   });
 });
+
+describe('ツールバーのアイコンからの開閉', () => {
+  it('開閉メッセージでパネルが開閉する', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+
+    // service worker からのメッセージを受ける口を、偽の runtime で差し込む。
+    const listeners = [];
+    main.listenForToggle({ onMessage: { addListener: (fn) => listeners.push(fn) } });
+    expect(listeners).toHaveLength(1);
+
+    const send = (type) => listeners[0]({ type });
+    const opened = main.getPanel().isOpen();
+
+    send('ctv:toggle-panel');
+    expect(main.getPanel().isOpen()).toBe(!opened);
+
+    send('ctv:toggle-panel');
+    expect(main.getPanel().isOpen()).toBe(opened);
+  });
+
+  it('知らない種類のメッセージでは何も起きない', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+
+    const listeners = [];
+    main.listenForToggle({ onMessage: { addListener: (fn) => listeners.push(fn) } });
+    const before = main.getPanel().isOpen();
+
+    listeners[0]({ type: 'ctv:something-else' });
+    listeners[0](null);
+
+    expect(main.getPanel().isOpen()).toBe(before);
+  });
+
+  it('runtime が無い環境では登録しない', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+    expect(() => main.listenForToggle(null)).not.toThrow();
+    expect(() => main.listenForToggle({})).not.toThrow();
+  });
+});
