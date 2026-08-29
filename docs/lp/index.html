@@ -75,6 +75,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
@@ -108,35 +109,45 @@ p { margin: 0; }
 }
 
 /* ---- hero ---- */
-.hero { padding: clamp(3.5rem, 8vw, 6.5rem) 0 clamp(2rem, 4vw, 3rem); }
-.hero__grid { display: grid; gap: clamp(2rem, 5vw, 3.5rem); }
-@media (min-width: 62rem) {
-  .hero__grid { grid-template-columns: minmax(0, 27rem) minmax(0, 1fr); align-items: start; }
-}
+.hero { padding: clamp(2.5rem, 5vw, 3.75rem) 0 clamp(2rem, 4vw, 3rem); }
+.hero__intro { max-width: 42rem; }
 .hero__title {
-  font-size: clamp(2.1rem, 1.2rem + 3.4vw, 3.4rem);
+  font-size: clamp(1.95rem, 1.1rem + 2.6vw, 2.9rem);
   letter-spacing: -0.01em;
-  margin-top: 0.7rem;
+  margin-top: 0.6rem;
 }
 .hero__title em { font-style: normal; color: var(--accent-ink); }
-.hero__lede { margin-top: 1.2rem; color: var(--muted); font-size: 1.02rem; }
-.hero__meta {
-  margin-top: 1.8rem;
-  display: flex; flex-wrap: wrap; gap: 0.5rem;
-}
+.hero__lede { margin-top: 1rem; color: var(--muted); font-size: 1.02rem; max-width: var(--measure); }
+.hero__meta { margin-top: 1.2rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .chip {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  padding: 0.28rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  color: var(--muted);
-  background: var(--surface);
+  font-family: var(--mono); font-size: 0.72rem;
+  padding: 0.28rem 0.7rem; border-radius: 999px;
+  border: 1px solid var(--line-strong); color: var(--muted); background: var(--surface);
 }
 .chip--on { border-color: transparent; background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
 
-/* ---- demo ---- */
+.hero__cta { margin-top: 1.35rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: 0.9rem; font-weight: 700;
+  padding: 0.7rem 1.35rem; border-radius: 10px;
+  text-decoration: none; border: 1px solid transparent;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.btn--primary { background: var(--accent); color: #fff; }
+.btn--primary:hover { background: var(--accent-ink); transform: translateY(-1px); }
+.btn--wait { background: var(--surface); color: var(--faint); border-color: var(--line); font-weight: 500; cursor: default; }
+.btn--wait::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: 0 0 auto; }
+.btn__icon { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; }
+.cta-sub {
+  font-size: 0.85rem; color: var(--muted);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong);
+}
+.cta-sub:hover { color: var(--accent-ink); text-decoration-color: var(--accent); }
+
+/* ---- demo: Chatwork の画面はそのまま、右にパネルが増えるだけ ---- */
 .demo {
+  margin-top: clamp(1.8rem, 3vw, 2.4rem);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -144,83 +155,90 @@ p { margin: 0; }
   overflow: hidden;
 }
 .demo__bar {
-  display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.7rem 0.9rem;
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  padding: 0.7rem 1rem;
   border-bottom: 1px solid var(--line);
   background: var(--surface-sunk);
+  font-family: var(--mono); font-size: 0.7rem; color: var(--faint);
 }
-.demo__label { font-family: var(--mono); font-size: 0.7rem; color: var(--faint); letter-spacing: 0.06em; }
-.seg {
-  margin-left: auto;
-  display: inline-flex;
-  padding: 2px;
-  border-radius: 999px;
-  background: var(--ground);
-  border: 1px solid var(--line);
+.demo__note { margin-left: auto; }
+.demo__panes { display: grid; grid-template-columns: 1fr; }
+@media (min-width: 54rem) { .demo__panes { grid-template-columns: minmax(0, 1fr) 21.5rem; } }
+.pane { padding: 0.5rem 0.9rem 1.1rem; min-width: 0; }
+.pane--panel { border-top: 1px solid var(--line); background: var(--surface-sunk); }
+@media (min-width: 54rem) { .pane--panel { border-top: 0; border-left: 1px solid var(--line); } }
+.pane__label {
+  font-family: var(--mono); font-size: 0.63rem; letter-spacing: 0.09em;
+  color: var(--faint); padding: 0.7rem 0.4rem 0.5rem;
+  display: flex; align-items: baseline; gap: 0.5rem;
 }
-.seg__btn {
-  font: inherit; font-size: 0.76rem; font-weight: 500;
-  padding: 0.24rem 0.85rem;
-  border: 0; border-radius: 999px;
-  background: transparent; color: var(--muted);
-  cursor: pointer;
-  transition: background 180ms ease, color 180ms ease;
-}
-.seg__btn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.pane__label b { color: var(--accent-ink); font-weight: 600; }
 
-.stream { padding: 0.9rem 1rem 1.2rem; display: flex; flex-direction: column; }
 .msg {
   position: relative;
-  display: grid;
-  grid-template-columns: 1.6rem minmax(0, 1fr);
-  gap: 0.6rem;
-  padding: 0.45rem 0.5rem;
-  border-radius: 9px;
-  will-change: transform;
+  display: grid; grid-template-columns: 1.6rem minmax(0, 1fr);
+  gap: 0.6rem; padding: 0.45rem 0.5rem; border-radius: 9px;
+  transition: background 160ms ease;
 }
 .msg__dot {
   width: 1.6rem; height: 1.6rem; border-radius: 50%;
   display: grid; place-items: center;
-  font-size: 0.68rem; font-weight: 700; color: #fff;
-  font-family: var(--body);
+  font-size: 0.68rem; font-weight: 700; color: #fff; font-family: var(--body);
 }
+.msg__head { display: flex; align-items: baseline; gap: 0.5rem; }
 .msg__name { font-size: 0.78rem; font-weight: 700; }
+.msg__time { font-size: 0.66rem; color: var(--faint); margin-left: auto; font-variant-numeric: tabular-nums; }
 .msg__text { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
-.msg__tag {
-  font-family: var(--mono); font-size: 0.62rem;
+.msg__chip {
+  display: inline-block; font-size: 0.62rem;
   padding: 0.05rem 0.45rem; border-radius: 999px;
-  background: var(--stray-wash); color: var(--stray);
-  margin-left: 0.4rem;
+  background: var(--stray-wash); color: var(--stray); margin: 0.1rem 0 0.15rem;
 }
+.msg.is-linked, .node.is-linked { background: var(--accent-wash); }
 
-/* フラット表示: 返信先が文字でしか分からない状態 */
-.stream[data-mode="flat"] .msg { margin-left: 0; }
-.stream[data-mode="flat"] .thread-head { display: none; }
-
-/* スレッド表示: 階層に沿って字下げし、ガイド線でつなぐ */
-.stream[data-mode="thread"] .msg[data-depth="1"] { margin-left: 1.4rem; }
-.stream[data-mode="thread"] .msg[data-depth="2"] { margin-left: 2.8rem; }
-.stream[data-mode="thread"] .msg[data-depth="1"]::before,
-.stream[data-mode="thread"] .msg[data-depth="2"]::before {
-  content: "";
-  position: absolute;
-  left: -0.75rem; top: -0.15rem; bottom: 0.45rem;
-  border-left: 1px solid var(--line-strong);
-  border-bottom: 1px solid var(--line-strong);
-  width: 0.6rem;
-  border-bottom-left-radius: 7px;
-  animation: draw 320ms ease both;
+/* パネル側。実物 (src/ui/render.js) の構造に合わせる */
+.tcard {
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); padding: 0.5rem 0.55rem; margin-bottom: 0.5rem;
+  opacity: 0; transform: translateX(10px);
+  animation: slidein 420ms cubic-bezier(0.22, 0.61, 0.28, 1) forwards;
 }
-@keyframes draw { from { opacity: 0; transform: scaleY(0.4); transform-origin: top; } to { opacity: 1; transform: none; } }
-.thread-head {
-  display: flex; align-items: baseline; gap: 0.55rem;
-  padding: 0.85rem 0.5rem 0.2rem;
-  font-family: var(--mono); font-size: 0.66rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--faint);
+.tcard--open { border-color: var(--accent); }
+@keyframes slidein { to { opacity: 1; transform: none; } }
+.tcard__sum { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: 0.55rem; }
+.tcard__av {
+  width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  display: grid; place-items: center; color: #fff;
+  font-size: 0.62rem; font-weight: 700;
 }
-.thread-head::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
-.stream[data-mode="thread"] .msg[data-depth="0"] { background: var(--accent-wash); }
+.tcard__head { display: flex; align-items: baseline; gap: 0.5rem; }
+.tcard__name { font-size: 0.76rem; font-weight: 700; }
+.tcard__time { font-size: 0.64rem; color: var(--faint); margin-left: auto; font-variant-numeric: tabular-nums; }
+.tcard__prev { font-size: 0.75rem; color: var(--muted); line-height: 1.55; margin-top: 0.1rem; }
+.tcard__pill {
+  display: inline-block; margin-top: 0.3rem;
+  font-size: 0.64rem; font-weight: 600;
+  padding: 0.02rem 0.5rem; border-radius: 999px;
+  background: var(--accent-wash); color: var(--accent-ink);
+}
+.tcard__tree { margin-top: 0.45rem; border-top: 1px solid var(--line); padding-top: 0.35rem; }
+.node {
+  position: relative;
+  display: flex; gap: 0.45rem; align-items: baseline;
+  padding: 0.25rem 0.35rem; border-radius: 7px;
+  font-size: 0.72rem;
+  transition: background 160ms ease;
+}
+.node__name { font-weight: 700; white-space: nowrap; flex: 0 0 auto; max-width: 6em; overflow: hidden; text-overflow: ellipsis; }
+.node__body { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; }
+.node__time { color: var(--faint); font-size: 0.62rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.node[data-depth="1"] { margin-left: 0.9rem; }
+.node[data-depth="2"] { margin-left: 1.8rem; }
+.node[data-depth="1"]::before, .node[data-depth="2"]::before {
+  content: ""; position: absolute; left: -0.55rem; top: -0.1rem; bottom: 0.4rem;
+  width: 0.45rem; border-left: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong); border-bottom-left-radius: 6px;
+}
 
 /* ---- sections ---- */
 section { padding: clamp(3rem, 7vw, 5rem) 0; }
@@ -332,15 +350,29 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
 <body>
 
 <header class="hero">
-  <div class="wrap hero__grid">
-    <div>
+  <div class="wrap">
+    <div class="hero__intro">
       <p class="eyebrow">Chrome 拡張機能</p>
       <h1 class="hero__title">流れた会話を、<br><em>もう一度たどれる</em>ように。</h1>
       <p class="hero__lede">
         Chatwork のタイムラインは、複数の話題が時系列に混ざって流れていきます。
-        この拡張は表示中の返信関係を読み取り、会話をスレッドの木構造に組み直します。
-        「この返信、どれに対するものだったか」を探し直す必要がなくなります。
+        この拡張は表示中の返信関係を読み取り、画面の右側にスレッドの一覧を出します。
+        Chatwork の画面自体は何も変えません。横に増えるだけです。
       </p>
+
+      <div class="hero__cta">
+        <a class="btn btn--primary" id="storeLink" href="#" hidden>
+          <svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3v9m0 0 7.8 4.5M12 12 4.2 16.5"></path>
+          </svg>
+          Chrome ウェブストアで追加
+        </a>
+        <span class="btn btn--wait" id="storeWait">Chrome ウェブストアに申請準備中</span>
+        <a class="cta-sub" href="#privacy-policy">プライバシーポリシー</a>
+      </div>
+
       <div class="hero__meta">
         <span class="chip chip--on">通信ゼロ</span>
         <span class="chip">権限は storage のみ</span>
@@ -350,13 +382,19 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
 
     <div class="demo">
       <div class="demo__bar">
-        <span class="demo__label">同じ 8 件のメッセージ</span>
-        <div class="seg" role="group" aria-label="表示の切り替え">
-          <button class="seg__btn" type="button" data-mode="flat" aria-pressed="true">タイムライン</button>
-          <button class="seg__btn" type="button" data-mode="thread" aria-pressed="false">スレッド</button>
+        <span>同じ 8 件のメッセージ</span>
+        <span class="demo__note">架空のサンプルです。実在の人物とは関係ありません。</span>
+      </div>
+      <div class="demo__panes">
+        <div class="pane pane--tl">
+          <p class="pane__label">Chatwork の画面（変わりません）</p>
+          <div id="timeline"></div>
+        </div>
+        <div class="pane pane--panel">
+          <p class="pane__label"><b>追加されるパネル</b></p>
+          <div id="panel"></div>
         </div>
       </div>
-      <div class="stream" id="stream" data-mode="flat"></div>
     </div>
   </div>
 </header>
@@ -367,18 +405,18 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
   <div class="wrap">
     <div class="section-head" style="max-width: var(--measure)">
       <p class="eyebrow">仕組み</p>
-      <h2>ページを読むだけで、外には出さない。</h2>
+      <h2>読み取りから表示まで</h2>
     </div>
     <div class="steps">
       <article class="step">
         <span class="step__n"></span>
         <h3>画面から読み取る</h3>
-        <p>表示中のタイムラインから、送信者・本文・時刻・返信先を読み取ります。API も通信も使いません。</p>
+        <p>表示中のタイムラインから、送信者と本文、時刻、返信先を読み取ります。API も通信も使いません。</p>
       </article>
       <article class="step">
         <span class="step__n"></span>
         <h3>親子関係を組み直す</h3>
-        <p>返信先をたどって根まで遡り、木構造を作ります。循環や親の欠落があっても壊れないようにしています。</p>
+        <p>返信先をたどって根まで遡り、木構造を作ります。返信が循環していても、親が読み込まれていなくても落ちません。</p>
       </article>
       <article class="step">
         <span class="step__n"></span>
@@ -397,43 +435,43 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
     </div>
     <div>
     <p class="body-copy">
-      この拡張にはバックエンドがありません。解析はすべてブラウザの中で完結します。
-      技術的に「送れない」設計であることを、次のかたちで担保しています。
+      会話の中身がどこかへ送られることはありません。送る相手も、送る道もない。
+      理由は次の 4 つです。
     </p>
     <div class="claims">
       <div class="claim">
         <span class="claim__mark">—</span>
         <div>
-          <p class="claim__t">通信するコードを含んでいません</p>
-          <p class="claim__d">ソース全体に fetch / XMLHttpRequest / WebSocket / sendBeacon が 1 箇所もありません。</p>
+          <p class="claim__t">データを送り出す機能が、そもそもありません</p>
+          <p class="claim__d">外へ情報を送るための処理を一切書いていません。送る先のサーバーも用意していません。</p>
         </div>
       </div>
       <div class="claim">
         <span class="claim__mark">—</span>
         <div>
-          <p class="claim__t">認証情報を扱いません</p>
-          <p class="claim__d">API トークンにもログイン情報にも触れません。読むのは画面に出ている内容だけです。</p>
+          <p class="claim__t">パスワードや鍵には触れません</p>
+          <p class="claim__d">Chatwork のログイン情報を読むことはありません。見るのは、あなたの画面にいま表示されている文字だけです。</p>
         </div>
       </div>
       <div class="claim">
         <span class="claim__mark">—</span>
         <div>
-          <p class="claim__t">メッセージを保存しません</p>
-          <p class="claim__d">端末に残すのはパネルの幅と開閉状態の 2 つだけ。拡張を削除すれば同時に消えます。</p>
+          <p class="claim__t">メッセージはどこにも残りません</p>
+          <p class="claim__d">読み取った内容はその場で表示に使うだけ。残すのはパネルの幅と、開いているかどうか。この 2 つだけです。</p>
         </div>
       </div>
       <div class="claim">
         <span class="claim__mark">—</span>
         <div>
-          <p class="claim__t">解析ツールも広告も入れていません</p>
-          <p class="claim__d">利用統計、クラッシュレポート、テレメトリのいずれも組み込んでいません。</p>
+          <p class="claim__t">誰が何を見たかを数えていません</p>
+          <p class="claim__d">利用状況を集める仕組みも、広告も入っていません。集める先がないので、集めようがない。</p>
         </div>
       </div>
     </div>
     <div class="code-note">
-      <b>権限:</b> storage<br>
-      <b>対象:</b> www.chatwork.com / kcw.kddi.ne.jp<br>
-      <b>その他:</b> service worker なし・リモートコードなし・外部依存なし
+      <b>保存するもの:</b> パネルの幅と開閉状態だけ<br>
+      <b>動くページ:</b> Chatwork のみ<br>
+      <b>外から読み込むもの:</b> なし（すべて拡張機能の中に入っています）
     </div>
     </div>
   </div>
@@ -443,7 +481,7 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
   <div class="wrap">
     <div class="section-head prose">
       <p class="eyebrow">画面</p>
-      <h2>本体のテーマに合わせて表示します。</h2>
+      <h2>ダークとライト</h2>
     </div>
     <div class="shots">
       <figure class="shot">
@@ -463,10 +501,11 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
 <section>
   <div class="wrap split">
     <div class="section-head">
-      <p class="eyebrow">できないこと</p>
-      <h2>先に言っておきます。</h2>
+      <p class="eyebrow">制限</p>
+      <h2>できないこと</h2>
     </div>
     <div class="limits">
+      <p class="body-copy" style="margin-bottom:2rem">先に言っておきます。以下は仕様です。直せる不具合ではありません。</p>
       <div class="limit">
         <h3>読み込まれている範囲だけが対象です</h3>
         <p>Chatwork は過去ログを順に読み込みます。上へスクロールして読み込んだ範囲でスレッドが復元されます。範囲外に親がある返信は、その旨を示したうえで単独のスレッドとして扱います。</p>
@@ -477,7 +516,7 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
       </div>
       <div class="limit">
         <h3>Chatwork の画面構造が変われば止まります</h3>
-        <p>画面から読み取る方式である以上、これは避けられません。動かなくなった場合はパネルに診断情報を表示し、原因の切り分けができるようにしています。</p>
+        <p>画面から読み取る以上、これは避けられません。動かなくなったらパネルに診断情報を出すので、こちらの不具合か Chatwork 側の変更かは切り分けられます。</p>
       </div>
       <div class="limit">
         <h3>返信の送信はできません</h3>
@@ -567,138 +606,119 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
 
 <script>
 /* ------------------------------------------------------------------
-   ヒーローのデモ。同じ 8 件が、時系列の並びからスレッドの木へ組み変わる。
-   並び替えは FLIP（旧位置を測る → 並べ替える → 差分だけ戻して解放）で
-   実際に動かす。この製品がやっていることそのものなので、静止画にしない。
+   ヒーローのデモ。左が Chatwork の画面、右が追加されるパネル。
+   この拡張は Chatwork の画面を書き換えない。横にパネルを足すだけなので、
+   左右を並べて見せる。切り替えるようなものではない。
+
+   パネル側の見た目は実物 (src/ui/render.js) に合わせてある。
+   実物に無いもの (話題名の見出し、パネル内の返信元チップ) は出さない。
    ------------------------------------------------------------------ */
+
+// 公開後、ここにストアの URL を入れるとボタンが有効になる。
+const STORE_URL = '';
+
+const storeLink = document.getElementById('storeLink');
+const storeWait = document.getElementById('storeWait');
+if (STORE_URL) {
+  storeLink.href = STORE_URL;
+  storeLink.hidden = false;
+  storeWait.hidden = true;
+}
+
+/* 名前は架空。見本として使われる形にして、実在の人物と取り違えられないようにする。 */
 const DATA = [
-  { id: 'a', name: '田中 美咲', hue: 208, text: '来週の定例、水曜15時に変更できますか。先方の都合が変わりました。', parent: null,  thread: 1, depth: 0 },
-  { id: 'b', name: '佐藤 健一', hue: 158, text: '水曜15時、こちらは問題ありません。',                                   parent: 'a',   thread: 1, depth: 1 },
-  { id: 'c', name: '鈴木 由紀', hue: 276, text: 'すみません、水曜は別件が入っています。木曜の同時刻ではどうでしょう。', parent: 'a',   thread: 1, depth: 1 },
-  { id: 'd', name: '高橋 誠',   hue: 22,  text: '請求書のテンプレートを更新しました。次回分から新しい方を。',           parent: null,  thread: 2, depth: 0 },
-  { id: 'e', name: '田中 美咲', hue: 208, text: '木曜15時で先方に確認します。少々お待ちください。',                     parent: 'c',   thread: 1, depth: 2 },
-  { id: 'f', name: '佐藤 健一', hue: 158, text: '振込手数料の欄は残す形で合っていますか。',                             parent: 'd',   thread: 2, depth: 1 },
-  { id: 'g', name: '鈴木 由紀', hue: 276, text: '問い合わせフォーム、ステージングに上げました。確認をお願いします。',   parent: null,  thread: 3, depth: 0 },
-  { id: 'h', name: '高橋 誠',   hue: 22,  text: '送信後の完了画面で、戻るボタンが二重に出ていました。',                 parent: 'g',   thread: 3, depth: 1 },
+  { id: 'a', name: '山田 太郎', hue: 208, time: '10:12', text: '来週の定例、水曜15時に変更できますか。先方の都合が変わりました。', parent: null, thread: 1, depth: 0 },
+  { id: 'b', name: '鈴木 花子', hue: 158, time: '10:20', text: '水曜15時、こちらは問題ありません。',                                   parent: 'a',  thread: 1, depth: 1 },
+  { id: 'c', name: '佐藤 次郎', hue: 276, time: '10:34', text: 'すみません、水曜は別件が入っています。木曜の同時刻ではどうでしょう。', parent: 'a',  thread: 1, depth: 1 },
+  { id: 'd', name: '高橋 三郎', hue: 22,  time: '11:02', text: '請求書のテンプレートを更新しました。次回分から新しい方を。',           parent: null, thread: 2, depth: 0 },
+  { id: 'e', name: '山田 太郎', hue: 208, time: '11:15', text: '木曜15時で先方に確認します。少々お待ちください。',                     parent: 'c',  thread: 1, depth: 2 },
+  { id: 'f', name: '鈴木 花子', hue: 158, time: '11:41', text: '振込手数料の欄は残す形で合っていますか。',                             parent: 'd',  thread: 2, depth: 1 },
+  { id: 'g', name: '佐藤 次郎', hue: 276, time: '13:08', text: '問い合わせフォーム、ステージングに上げました。確認をお願いします。',   parent: null, thread: 3, depth: 0 },
+  { id: 'h', name: '高橋 三郎', hue: 22,  time: '13:26', text: '送信後の完了画面で、戻るボタンが二重に出ていました。',                 parent: 'g',  thread: 3, depth: 1 },
 ];
-const THREAD_TITLE = { 1: '定例の日程', 2: '請求書テンプレート', 3: '問い合わせフォーム' };
 
-const stream = document.getElementById('stream');
 const byId = new Map(DATA.map((d) => [d.id, d]));
-const nodes = new Map();
+const color = (h) => `hsl(${h} 38% 42%)`;
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+};
 
+/* ---- 左: Chatwork の画面。返信元チップは Chatwork 側の表示なのでここに出す ---- */
+const timeline = document.getElementById('timeline');
+const rowById = new Map();
 for (const d of DATA) {
-  const el = document.createElement('div');
-  el.className = 'msg';
-  el.dataset.id = d.id;
-  el.dataset.depth = String(d.depth);
+  const row = el('div', 'msg');
+  row.dataset.id = d.id;
 
-  const dot = document.createElement('div');
-  dot.className = 'msg__dot';
-  dot.style.background = `hsl(${d.hue} 38% 42%)`;
-  dot.textContent = d.name.slice(0, 1);
+  const dot = el('div', 'msg__dot', d.name.slice(0, 1));
+  dot.style.background = color(d.hue);
 
-  const main = document.createElement('div');
-  const nm = document.createElement('div');
-  nm.className = 'msg__name';
-  nm.textContent = d.name;
-  if (d.parent) {
-    const tag = document.createElement('span');
-    tag.className = 'msg__tag';
-    tag.textContent = '返信元: ' + byId.get(d.parent).name;
-    nm.appendChild(tag);
-  }
-  const tx = document.createElement('p');
-  tx.className = 'msg__text';
-  tx.textContent = d.text;
-  main.append(nm, tx);
+  const main = el('div');
+  const head = el('div', 'msg__head');
+  head.append(el('span', 'msg__name', d.name), el('span', 'msg__time', d.time));
+  main.appendChild(head);
+  if (d.parent) main.appendChild(el('span', 'msg__chip', '返信元: ' + byId.get(d.parent).name));
+  main.appendChild(el('p', 'msg__text', d.text));
 
-  el.append(dot, main);
-  nodes.set(d.id, el);
+  row.append(dot, main);
+  timeline.appendChild(row);
+  rowById.set(d.id, row);
 }
 
-// スレッド表示のときだけ挟む見出し
-const heads = new Map();
-for (const t of Object.keys(THREAD_TITLE)) {
-  const h = document.createElement('div');
-  h.className = 'thread-head';
-  h.textContent = THREAD_TITLE[t];
-  heads.set(Number(t), h);
-}
+/* ---- 右: 追加されるパネル。実物と同じ組み立て ---- */
+const panel = document.getElementById('panel');
+const nodeById = new Map();
+for (const t of [1, 2, 3]) {
+  const members = DATA.filter((d) => d.thread === t);
+  const root = members.find((d) => !d.parent);
+  const kids = members.filter((d) => d.parent);
 
-const FLAT_ORDER = DATA.map((d) => d.id);
-const THREAD_ORDER = [1, 2, 3].flatMap((t) => DATA.filter((d) => d.thread === t).map((d) => d.id));
+  const card = el('div', t === 1 ? 'tcard tcard--open' : 'tcard');
+  card.style.animationDelay = `${240 + t * 90}ms`;
 
-function layout(mode) {
-  const frag = document.createDocumentFragment();
-  if (mode === 'flat') {
-    for (const id of FLAT_ORDER) frag.appendChild(nodes.get(id));
-  } else {
-    let current = null;
-    for (const id of THREAD_ORDER) {
-      const d = byId.get(id);
-      if (d.thread !== current) {
-        current = d.thread;
-        frag.appendChild(heads.get(current));
-      }
-      frag.appendChild(nodes.get(id));
+  const sum = el('div', 'tcard__sum');
+  const av = el('div', 'tcard__av', root.name.slice(0, 1));
+  av.style.background = color(root.hue);
+  const body = el('div');
+  const head = el('div', 'tcard__head');
+  head.append(el('span', 'tcard__name', root.name), el('span', 'tcard__time', root.time));
+  body.append(head, el('p', 'tcard__prev', root.text), el('span', 'tcard__pill', `返信 ${kids.length} 件`));
+  sum.append(av, body);
+  card.appendChild(sum);
+
+  // 起点のスレッドだけ開いた状態で見せる（実物も開くとツリーが出る）
+  if (t === 1) {
+    const tree = el('div', 'tcard__tree');
+    for (const d of members) {
+      const n = el('div', 'node');
+      n.dataset.id = d.id;
+      n.dataset.depth = String(d.depth);
+      n.append(
+        el('span', 'node__name', d.name),
+        el('span', 'node__body', d.text),
+        el('span', 'node__time', d.time)
+      );
+      tree.appendChild(n);
+      nodeById.set(d.id, n);
     }
+    card.appendChild(tree);
   }
-  stream.dataset.mode = mode;
-  stream.appendChild(frag);
+  panel.appendChild(card);
 }
 
-const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-
-function setMode(mode) {
-  if (stream.dataset.mode === mode) return;
-
-  if (reduced.matches) {
-    layout(mode);
-  } else {
-    const before = new Map();
-    for (const [id, el] of nodes) before.set(id, el.getBoundingClientRect());
-
-    layout(mode);
-
-    for (const [id, el] of nodes) {
-      const f = before.get(id);
-      const l = el.getBoundingClientRect();
-      const dx = f.left - l.left;
-      const dy = f.top - l.top;
-      if (!dx && !dy) continue;
-      el.style.transition = 'none';
-      el.style.transform = `translate(${dx}px, ${dy}px)`;
-    }
-    // 位置を戻したことを確定させてから解放する
-    void stream.offsetWidth;
-    for (const el of nodes.values()) {
-      el.style.transition = 'transform 460ms cubic-bezier(0.22, 0.61, 0.28, 1)';
-      el.style.transform = '';
-    }
-  }
-
-  for (const btn of document.querySelectorAll('.seg__btn')) {
-    btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode));
-  }
+/* ---- 左右の対応を見せる。同じメッセージに触れると両方が光る ---- */
+function link(id, on) {
+  const r = rowById.get(id);
+  const n = nodeById.get(id);
+  if (r) r.classList.toggle('is-linked', on);
+  if (n) n.classList.toggle('is-linked', on);
 }
-
-for (const btn of document.querySelectorAll('.seg__btn')) {
-  btn.addEventListener('click', () => setMode(btn.dataset.mode));
-}
-
-layout('flat');
-
-// 一度だけ、自分から組み変わってみせる。何をする拡張かが一目で伝わるように。
-if (!reduced.matches) {
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      io.disconnect();
-      setTimeout(() => setMode('thread'), 700);
-    }
-  }, { threshold: 0.5 });
-  io.observe(stream);
+for (const [id, node] of [...rowById, ...nodeById]) {
+  node.addEventListener('mouseenter', () => link(id, true));
+  node.addEventListener('mouseleave', () => link(id, false));
 }
 </script>
 </body>
