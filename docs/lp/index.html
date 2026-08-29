@@ -136,6 +136,8 @@ p { margin: 0; }
 }
 .btn--primary { background: var(--accent); color: #fff; }
 .btn--primary:hover { background: var(--accent-ink); transform: translateY(-1px); }
+.btn--ghost { background: var(--surface); color: var(--muted); border-color: var(--line-strong); }
+.btn--ghost:hover { border-color: var(--accent); color: var(--accent-ink); }
 .btn--wait { background: var(--surface); color: var(--faint); border-color: var(--line); font-weight: 500; cursor: default; }
 .btn--wait::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: 0 0 auto; }
 .btn__icon { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; }
@@ -370,6 +372,18 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
           Chrome ウェブストアで追加
         </a>
         <span class="btn btn--wait" id="storeWait">Chrome ウェブストアに申請準備中</span>
+        <a class="btn btn--ghost" id="repoBtn" href="#" hidden>
+          <svg class="btn__icon" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+              0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01
+              1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95
+              0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68
+              0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0
+              3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01
+              8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+          </svg>
+          ソースコード
+        </a>
         <a class="cta-sub" href="#privacy-policy">プライバシーポリシー</a>
       </div>
 
@@ -583,7 +597,15 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
     <p>対象は Chatwork のサービス提供ドメインに限定しており、その他のサイトでは動作しません。</p>
 
     <h3>6. 検証方法</h3>
-    <p>ソースコードは公開されています。fetch / XMLHttpRequest / WebSocket / EventSource / navigator.sendBeacon のいずれもソースコード中に存在しないことを確認できます。</p>
+    <p id="verifyOpen" hidden>
+      ソースコードを公開しています。<a id="repoLinkPolicy" href="#">リポジトリ</a>を開き、
+      fetch / XMLHttpRequest / WebSocket / EventSource / navigator.sendBeacon を検索すると、
+      いずれも 1 件も見つからないことを確認できます。
+    </p>
+    <p id="verifyClosed">
+      本拡張は fetch / XMLHttpRequest / WebSocket / EventSource / navigator.sendBeacon の
+      いずれも使用していません。ソースコードによる確認をご希望の場合は、お問い合わせください。
+    </p>
 
     <h3>7. 本ポリシーの変更</h3>
     <p>内容を変更する場合は、最終更新日を改めたうえで本ページに掲載します。収集する情報を増やす変更を行う場合は、事前に拡張機能の説明欄で告知します。</p>
@@ -614,8 +636,10 @@ footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line); }
    実物に無いもの (話題名の見出し、パネル内の返信元チップ) は出さない。
    ------------------------------------------------------------------ */
 
-// 公開後、ここにストアの URL を入れるとボタンが有効になる。
+// 公開後、ここに URL を入れるとリンクが有効になる。
+// 空のあいだは「公開しています」と書かない。書けば嘘になる。
 const STORE_URL = '';
+const REPO_URL = '';
 
 const storeLink = document.getElementById('storeLink');
 const storeWait = document.getElementById('storeWait');
@@ -623,6 +647,15 @@ if (STORE_URL) {
   storeLink.href = STORE_URL;
   storeLink.hidden = false;
   storeWait.hidden = true;
+}
+
+if (REPO_URL) {
+  const repoBtn = document.getElementById('repoBtn');
+  repoBtn.href = REPO_URL;
+  repoBtn.hidden = false;
+  document.getElementById('repoLinkPolicy').href = REPO_URL;
+  document.getElementById('verifyOpen').hidden = false;
+  document.getElementById('verifyClosed').hidden = true;
 }
 
 /* 名前は架空。見本として使われる形にして、実在の人物と取り違えられないようにする。 */
