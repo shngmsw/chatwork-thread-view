@@ -6,7 +6,8 @@
   "description": "Chatwork の返信をスレッド形式で構造化表示する Chrome 拡張",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "package": "node scripts/package.mjs"
   },
   "devDependencies": {
     "vitest": "^2.1.8",

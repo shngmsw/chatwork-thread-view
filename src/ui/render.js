@@ -26,6 +26,47 @@ function el(tag, className, text) {
   return node;
 }
 
+// アカウント ID から決まる色。同じ人はいつも同じ色になる。
+// 彩度と明度を固定し、白文字とのコントラストを確保する。
+function avatarColor(seed) {
+  const key = String(seed || '');
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) % 360;
+  }
+  return `hsl(${hash}, 42%, 42%)`;
+}
+
+function initial(name) {
+  const trimmed = (name || '').trim();
+  return trimmed ? trimmed.slice(0, 1) : '?';
+}
+
+function buildAvatar(message) {
+  const node = el('div', 'avatar', initial(message.userName));
+  node.style.background = avatarColor(message.accountId || message.userName);
+  node.setAttribute('aria-hidden', 'true');
+  return node;
+}
+
+// 開閉インジケータ。色は CSS のトークンから currentColor 経由で受け取る。
+function buildChevron() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', 'thread__chevron');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', 'M6 3.5 L10.5 8 L6 12.5');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', 'currentColor');
+  path.setAttribute('stroke-width', '1.6');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(path);
+  return svg;
+}
+
 function stateMessage(text, modifier) {
   return el('div', modifier ? `state ${modifier}` : 'state', text);
 }
@@ -34,7 +75,6 @@ function buildNode(node, onJump) {
   const row = el('div', 'node');
   row.dataset.role = 'node';
   row.dataset.messageId = node.message.id;
-  row.style.paddingLeft = `${Math.min(node.depth, 6) * 14}px`;
   row.setAttribute('role', 'button');
   row.setAttribute('tabindex', '0');
 
@@ -54,6 +94,9 @@ function buildNode(node, onJump) {
   });
 
   const wrapper = el('div', 'node__wrap');
+  // 入れ子構造そのものでインデントする。CSS のガイド線が各段の左端に乗る。
+  // 深くなりすぎるとパネル幅を食うので 6 段で頭打ちにする。
+  if (node.depth > 0 && node.depth <= 6) wrapper.style.marginLeft = '14px';
   wrapper.appendChild(row);
   for (const child of node.children) {
     wrapper.appendChild(buildNode(child, onJump));
@@ -70,20 +113,26 @@ function buildCard(thread, onJump, openIds, onToggle) {
   card.addEventListener('toggle', () => onToggle(thread.rootId, card.open));
 
   const summary = el('summary', 'thread__summary');
-  summary.append(
+
+  const head = el('div', 'thread__head');
+  head.append(
     el('span', 'thread__name', thread.rootMessage.userName),
-    el('span', 'thread__preview', truncate(thread.rootMessage.body))
+    el('span', 'thread__time', formatRelative(thread.updatedAt))
   );
 
   const meta = el('div', 'thread__meta');
-  meta.append(
-    el('span', null, `返信 ${thread.replyCount} 件`),
-    el('span', null, formatRelative(thread.updatedAt))
-  );
+  meta.appendChild(el('span', 'thread__replies', `返信 ${thread.replyCount} 件`));
   if (thread.rootIsSynthetic) {
     meta.appendChild(el('span', 'thread__badge', '親メッセージ未読み込み'));
   }
-  summary.appendChild(meta);
+
+  summary.append(
+    buildAvatar(thread.rootMessage),
+    head,
+    buildChevron(),
+    el('div', 'thread__preview', truncate(thread.rootMessage.body)),
+    meta
+  );
 
   card.appendChild(summary);
   card.appendChild(buildNode(thread.tree, onJump));

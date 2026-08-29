@@ -97,3 +97,42 @@ export function runHealthCheck(messages, doc = document) {
     timelineChildCount: timeline ? timeline.children.length : 0,
   };
 }
+
+/**
+ * Chatwork 側が今どちらのテーマで表示しているかを返す。
+ * パネルの配色を本体に合わせるために使う。Chatwork のクラス名に触れる
+ * 唯一の場所をここに閉じ、UI 側は自前の data-theme だけを見る。
+ * @param {Document} [doc]
+ * @returns {'dark'|'light'}
+ */
+export function getHostTheme(doc = document) {
+  const root = doc.documentElement;
+  if (root && root.classList.contains('dark')) return 'dark';
+  if (root && root.classList.contains('light')) return 'light';
+  const mq = doc.defaultView && doc.defaultView.matchMedia;
+  if (mq && doc.defaultView.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark';
+  }
+  return 'light';
+}
+
+/**
+ * Chatwork のテーマ切替を監視する。
+ * @param {(theme: 'dark'|'light') => void} onChange
+ * @param {Document} [doc]
+ * @returns {() => void} 監視を止める関数
+ */
+export function watchHostTheme(onChange, doc = document) {
+  let current = getHostTheme(doc);
+  const observer = new MutationObserver(() => {
+    const next = getHostTheme(doc);
+    if (next === current) return;
+    current = next;
+    onChange(next);
+  });
+  observer.observe(doc.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+  return () => observer.disconnect();
+}

@@ -1,5 +1,5 @@
 import { PANEL_CSS } from './styles.js';
-import { SEL } from '../content/selectors.js';
+import { SEL, getHostTheme, watchHostTheme } from '../content/selectors.js';
 
 export const PANEL_ID = 'ctv-root';
 const LAYOUT_STYLE_ID = 'ctv-layout-style';
@@ -85,6 +85,12 @@ export function createPanel() {
     <div class="panel__body" data-role="body"></div>
   `;
 
+  // 配色は Chatwork 本体のテーマに合わせる。CSS は自前の data-theme だけを見る。
+  panel.dataset.theme = getHostTheme();
+  const stopThemeWatch = watchHostTheme((theme) => {
+    panel.dataset.theme = theme;
+  });
+
   shadow.append(style, panel);
   document.body.appendChild(host);
 
@@ -123,6 +129,8 @@ export function createPanel() {
   function setHideEmpty(next) {
     hideEmpty = next;
     toggleEmptyBtn.textContent = hideEmpty ? '全件表示' : '返信ありのみ';
+    // 「全件表示中」を押し込み状態として見せる。
+    toggleEmptyBtn.setAttribute('aria-pressed', String(!hideEmpty));
   }
 
   toggleEmptyBtn.addEventListener('click', () => {
@@ -190,6 +198,7 @@ export function createPanel() {
     },
     destroy() {
       clearNotice();
+      stopThemeWatch();
       host.remove();
       document.documentElement.classList.remove(OPEN_CLASS);
     },
