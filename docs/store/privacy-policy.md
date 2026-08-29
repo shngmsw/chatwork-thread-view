@@ -64,9 +64,12 @@ Chrome の `storage` 権限を用いて、以下の 2 つの値のみをお使�
 
 ## 6. 検証方法
 
-本拡張は以下のいずれの API も使用していません。
-ソースコードを公開している場合は、リポジトリを検索することで確認できます
-（公開先: 未確定。公開したら URL をここに記載すること）。
+ソースコードを公開しています。
+
+https://github.com/shngmsw/chatwork-thread-view
+
+リポジトリ内を fetch / XMLHttpRequest / WebSocket / EventSource /
+navigator.sendBeacon で検索すると、いずれも 1 件も見つかりません。
 
 - `fetch`
 - `XMLHttpRequest`
