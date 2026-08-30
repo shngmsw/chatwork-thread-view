@@ -979,9 +979,9 @@ footer { padding: 3rem 0; border-top: 1px solid var(--line); background: var(--b
    実物に無いもの (話題名の見出し、パネル内の返信元チップ) は出さない。
    ------------------------------------------------------------------ */
 
-// 審査が通ったら、ここにストアの URL を入れるとボタンが有効になる。
-// 空のあいだは「審査中」の表示のままで、押せるリンクは出さない。
-const STORE_URL = '';
+// ストアの URL が入っているとボタンがリンクになる。
+// 空にすると「審査中」の表示に戻り、押せるリンクは出さない。
+const STORE_URL = 'https://chromewebstore.google.com/detail/kcengiejgiiengkbbbofbceiiehbbgkj';
 const REPO_URL = 'https://github.com/shngmsw/chatwork-thread-view';
 
 if (STORE_URL) {
