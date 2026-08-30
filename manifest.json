@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "スレッドビュー for Chatwork",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Chatwork の返信をスレッド形式で構造化表示します。株式会社kubellの公式製品ではありません。",
   "permissions": [
     "storage"
