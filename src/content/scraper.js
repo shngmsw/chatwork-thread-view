@@ -28,14 +28,18 @@ function querySender(el, selector) {
 
 /**
  * 連続投稿では送信者情報が DOM から省略される。直前の解析結果を持ち回るための状態。
- * @returns {{nameByAid: Map<string,string>, lastAccountId: string, lastUserName: string, lastAvatarUrl: string}}
+ *
+ * 名前もアイコンも「直前の 1 件」ではなくアカウント ID ごとに持つ。直前の 1 件で
+ * 持つと、アイコンを取れない送信者を挟んだときに別人のアイコンが引き継がれる。
+ * @returns {{nameByAid: Map<string,string>, avatarByAid: Map<string,string>,
+ *   lastAccountId: string, lastUserName: string}}
  */
 export function createScrapeContext() {
   return {
     nameByAid: new Map(),
+    avatarByAid: new Map(),
     lastAccountId: '',
     lastUserName: '',
-    lastAvatarUrl: '',
   };
 }
 
@@ -77,10 +81,12 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
         UNKNOWN_NAME;
     }
 
+    // アイコンはアカウント ID に紐づけて覚える。連続投稿で DOM から消えても、
+    // 同じアカウントの過去の投稿から引ける。取れなければバッジに落とす。
+    const scrapedAvatar = avatarEl?.getAttribute('src') || '';
+    if (scrapedAvatar && accountId) ctx.avatarByAid.set(accountId, scrapedAvatar);
     const avatarUrl =
-      avatarEl?.getAttribute('src') ||
-      (sameSenderAsPrev ? ctx.lastAvatarUrl : '') ||
-      '';
+      scrapedAvatar || (accountId && ctx.avatarByAid.get(accountId)) || '';
 
     const tmAttr = querySender(el, SEL.timeStamp)?.getAttribute('data-tm');
     const timestamp = tmAttr ? Number(tmAttr) : 0;
@@ -105,7 +111,6 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
 
     ctx.lastAccountId = accountId;
     ctx.lastUserName = userName;
-    if (avatarUrl) ctx.lastAvatarUrl = avatarUrl;
 
     return {
       id,

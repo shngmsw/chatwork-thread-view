@@ -165,3 +165,41 @@ describe('返信チップ内の返信先ユーザーを送信者と取り違え�
     expect(consecutive.replyToId).toBe('100');
   });
 });
+
+// 送信者名は nameByAid で「誰の名前か」を持つのに、アバターは
+// lastAvatarUrl という 1 個の変数しか持たない。この非対称が疑わしい。
+describe('アバターの引き継ぎ', () => {
+  const A = '1111111';
+  const B = '2222222';
+
+  it('アバターを取れなかった送信者が、直前の別人のアイコンを引き継がない', () => {
+    document.body.innerHTML = `
+      <div id="_timeLine">
+        <div class="_message" data-rid="R1" data-mid="100" data-index="0" data-deleted="0">
+          <div class="_speaker">
+            <button class="_profileUserIcon" data-aid="${A}"></button>
+            <img class="userIconImage _avatarAid${A}" src="https://cdn/a.png" alt="Aさん">
+            <p data-testid="timeline_user-name">Aさん</p>
+          </div>
+          <div class="_timeStamp" data-tm="1000"></div>
+          <pre><span>A の投稿</span></pre>
+        </div>
+        <div class="_message" data-rid="R1" data-mid="101" data-index="1" data-deleted="0">
+          <div class="_speaker">
+            <button class="_profileUserIcon" data-aid="${B}"></button>
+            <p data-testid="timeline_user-name">Bさん</p>
+          </div>
+          <div class="_timeStamp" data-tm="1001"></div>
+          <pre><span>B の投稿 (アイコンが取れない)</span></pre>
+        </div>
+        <div class="_message" data-rid="R1" data-mid="102" data-index="2" data-deleted="0">
+          <div class="_timeStamp" data-tm="1002"></div>
+          <pre><span>B の連続投稿</span></pre>
+        </div>
+      </div>`;
+
+    const [, , consecutive] = parseTimeline(getMessageElements(document));
+    expect(consecutive.userName).toBe('Bさん');
+    expect(consecutive.avatarUrl).not.toBe('https://cdn/a.png');
+  });
+});
