@@ -147,7 +147,7 @@ describe('未読み込みメッセージの通知', () => {
     document.getElementById(`_messageId${REPLY_ID}`).remove();
     main
       .getPanel()
-      .shadow.querySelector(`[data-role="node"][data-message-id="${REPLY_ID}"]`)
+      .shadow.querySelector(`[data-role="node"][data-message-id="${REPLY_ID}"] [data-role="jump"]`)
       .click();
     expect(panelText()).toContain('まだ読み込まれていません');
 
@@ -225,5 +225,20 @@ describe('スレッド名の編集', () => {
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
     expect(shadowOf().querySelector('.thread__name').textContent).toBe('請求書フォーマットの件');
+  });
+});
+
+describe('返信ノードの全文展開', () => {
+  it('展開した状態は再描画をまたいで残る', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+    const nodeOf = () =>
+      main.getPanel().shadow.querySelector(`[data-role="node"][data-message-id="${REPLY_ID}"]`);
+
+    nodeOf().click();
+    expect(nodeOf().classList.contains('node--open')).toBe(true);
+
+    main.refresh();
+    expect(nodeOf().classList.contains('node--open')).toBe(true);
   });
 });

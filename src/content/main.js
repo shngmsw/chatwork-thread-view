@@ -18,6 +18,8 @@ const state = {
   stopObserver: null,
   // 開いているスレッドの rootId。再描画をまたいで開閉状態を保つ。
   openIds: new Set(),
+  // 全文を開いている返信メッセージの ID。同じく再描画をまたいで保つ。
+  expandedIds: new Set(),
   // 健全でなくなった時刻。復旧すれば null に戻す。
   // 「一度描画に成功したか」を門にすると、起動時点で既に壊れている場合に
   // その条件自体がフラグの成立を妨げて永久に報告されない。時間で判断する。
@@ -129,6 +131,11 @@ export function refresh() {
   renderThreads(state.panel.body, threads, {
     hideEmpty: state.hideEmpty,
     openIds: state.openIds,
+    expandedIds: state.expandedIds,
+    onExpand: (messageId, expanded) => {
+      if (expanded) state.expandedIds.add(messageId);
+      else state.expandedIds.delete(messageId);
+    },
     names: state.names,
     onRename: (key, name) => {
       state.names = state.store.setName(key, name, 'user');
@@ -171,6 +178,7 @@ export function boot() {
     onRoomChange: (roomId) => {
       // ルームが変わったら前ルームの表示も開閉状態も残さない。
       state.openIds.clear();
+      state.expandedIds.clear();
       state.names = {};
       state.store.load(roomId).then((items) => {
         state.names = items;
@@ -204,6 +212,7 @@ export function teardown() {
   }
   state.names = {};
   state.openIds.clear();
+  state.expandedIds.clear();
   state.hideEmpty = true;
   state.unhealthySince = null;
 }

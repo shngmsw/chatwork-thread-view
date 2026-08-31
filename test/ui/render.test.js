@@ -47,7 +47,7 @@ describe('renderThreads', () => {
     expect(container.textContent).toContain('メッセージを読み込み中です');
   });
 
-  it('ツリーのノードをクリックすると onJump がメッセージ ID で呼ばれる', () => {
+  it('ジャンプボタンを押すと onJump がメッセージ ID で呼ばれる', () => {
     const onJump = vi.fn();
     const threads = buildThreads([
       msg('1', { timestamp: 100 }),
@@ -56,7 +56,7 @@ describe('renderThreads', () => {
     renderThreads(container, threads, { hideEmpty: true, onJump });
     const nodes = container.querySelectorAll('[data-role="node"]');
     expect(nodes).toHaveLength(2);
-    nodes[1].click();
+    nodes[1].querySelector('[data-role="jump"]').click();
     expect(onJump).toHaveBeenCalledWith('2');
   });
 
@@ -275,5 +275,60 @@ describe('アバター', () => {
     container.querySelector('img.avatar').dispatchEvent(new Event('error'));
     expect(container.querySelector('img.avatar')).toBeNull();
     expect(container.querySelector('div.avatar').textContent).toBe('三');
+  });
+});
+
+describe('返信ノードの全文表示', () => {
+  const LONG = 'あ'.repeat(200);
+  const withLongReply = () =>
+    buildThreads([
+      msg('1', { timestamp: 100 }),
+      reply('2', '1', { body: LONG, timestamp: 200 }),
+    ]);
+  const nodeOf = (id) => container.querySelector(`[data-role="node"][data-message-id="${id}"]`);
+
+  it('本文を切り詰めずに全文を持つ', () => {
+    renderThreads(container, withLongReply(), { hideEmpty: true, onJump: () => {} });
+    expect(nodeOf('2').querySelector('.node__body').textContent).toBe(LONG);
+  });
+
+  it('クリックで開き、もう一度クリックで閉じる', () => {
+    const onExpand = vi.fn();
+    renderThreads(container, withLongReply(), { hideEmpty: true, onJump: () => {}, onExpand });
+    const node = nodeOf('2');
+
+    node.click();
+    expect(node.classList.contains('node--open')).toBe(true);
+    expect(onExpand).toHaveBeenLastCalledWith('2', true);
+
+    node.click();
+    expect(node.classList.contains('node--open')).toBe(false);
+    expect(onExpand).toHaveBeenLastCalledWith('2', false);
+  });
+
+  it('本文クリックでは onJump を呼ばない', () => {
+    const onJump = vi.fn();
+    renderThreads(container, withLongReply(), { hideEmpty: true, onJump });
+    nodeOf('2').querySelector('.node__body').click();
+    expect(onJump).not.toHaveBeenCalled();
+  });
+
+  // 再描画で DOM は作り直される。開閉状態はスレッドカードと同じく呼び出し側が持つ。
+  it('expandedIds に入っていれば最初から開いている', () => {
+    renderThreads(container, withLongReply(), {
+      hideEmpty: true,
+      onJump: () => {},
+      expandedIds: new Set(['2']),
+    });
+    expect(nodeOf('2').classList.contains('node--open')).toBe(true);
+  });
+
+  it('ジャンプボタンを押しても開閉しない', () => {
+    const onJump = vi.fn();
+    renderThreads(container, withLongReply(), { hideEmpty: true, onJump });
+    const node = nodeOf('2');
+    node.querySelector('[data-role="jump"]').click();
+    expect(onJump).toHaveBeenCalledWith('2');
+    expect(node.classList.contains('node--open')).toBe(false);
   });
 });

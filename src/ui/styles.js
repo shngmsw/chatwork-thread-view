@@ -359,10 +359,7 @@ export const PANEL_CSS = `
   opacity: 0.6;
 }
 .node {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  padding: 5px 12px;
+  padding: 6px 12px;
   cursor: pointer;
   font-size: 13px;
   border-radius: var(--radius-sm);
@@ -370,6 +367,11 @@ export const PANEL_CSS = `
 }
 .node:hover { background: var(--surface-3); }
 .node:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.node__head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
 .node__name {
   font-weight: 600;
   white-space: nowrap;
@@ -377,23 +379,50 @@ export const PANEL_CSS = `
   /* 縮ませない。縮むと「鈴…」のように 1 文字まで潰れて誰の発言か分からなくなる。
      長すぎる名前だけを max-width で省略する。 */
   flex: 0 0 auto;
-  max-width: 7em;
+  max-width: 10em;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .node__body {
   color: var(--text-dim);
+  /* 全文を持たせ、畳むのは CSS の役目。Chatwork の改行をそのまま見せる。 */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1 1 auto;
 }
+.node--open .node__body {
+  display: block;
+  overflow: visible;
+}
+.node__body:empty { display: none; }
 .node__time {
   color: var(--text-faint);
   font-size: 11px;
   white-space: nowrap;
+  margin-left: auto;
   font-variant-numeric: tabular-nums;
 }
+.node__jump {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0;
+  flex: 0 0 auto;
+  transition: opacity var(--ease), color var(--ease), background var(--ease);
+}
+.node:hover .node__jump,
+.node__jump:focus-visible { opacity: 1; }
+.node__jump:hover { color: var(--accent-text); background: var(--accent-weak); }
+.node__jump:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ---- diagnostic ---- */
 .diagnostic {

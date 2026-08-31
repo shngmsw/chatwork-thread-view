@@ -99,25 +99,54 @@ function stateMessage(text, modifier) {
   return el('div', modifier ? `state ${modifier}` : 'state', text);
 }
 
-function buildNode(node, onJump) {
+function buildNode(node, onJump, expandedIds, onExpand) {
+  const messageId = node.message.id;
   const row = el('div', 'node');
   row.dataset.role = 'node';
-  row.dataset.messageId = node.message.id;
+  row.dataset.messageId = messageId;
   row.setAttribute('role', 'button');
   row.setAttribute('tabindex', '0');
 
-  row.append(
+  const head = el('div', 'node__head');
+  head.append(
     el('span', 'node__name', node.message.userName),
-    el('span', 'node__body', truncate(node.message.body, 60)),
     el('span', 'node__time', formatRelative(node.message.timestamp))
   );
 
-  const jump = () => onJump(node.message.id);
-  row.addEventListener('click', jump);
+  // タイムラインへ飛ぶ口は独立したボタンにする。本文クリックは開閉に使うため、
+  // 同じ操作に 2 つの意味を持たせない。
+  const jumpBtn = el('button', 'node__jump', '↗');
+  jumpBtn.type = 'button';
+  jumpBtn.dataset.role = 'jump';
+  jumpBtn.setAttribute('aria-label', 'タイムラインの該当位置へ移動');
+  jumpBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    onJump(messageId);
+  });
+  head.appendChild(jumpBtn);
+
+  // 全文をそのまま持たせ、畳むのは CSS に任せる。改行は pre-wrap で保つ。
+  const body = el('div', 'node__body', node.message.body || '');
+
+  row.append(head, body);
+
+  // 再描画で DOM は作り直されるため、開閉状態は呼び出し側が持つ集合から復元する。
+  let open = Boolean(expandedIds && expandedIds.has(messageId));
+  row.classList.toggle('node--open', open);
+  row.setAttribute('aria-expanded', String(open));
+
+  const toggle = () => {
+    open = !open;
+    row.classList.toggle('node--open', open);
+    row.setAttribute('aria-expanded', String(open));
+    onExpand(messageId, open);
+  };
+
+  row.addEventListener('click', toggle);
   row.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      jump();
+      toggle();
     }
   });
 
@@ -127,12 +156,12 @@ function buildNode(node, onJump) {
   if (node.depth > 0 && node.depth <= 6) wrapper.style.marginLeft = '14px';
   wrapper.appendChild(row);
   for (const child of node.children) {
-    wrapper.appendChild(buildNode(child, onJump));
+    wrapper.appendChild(buildNode(child, onJump, expandedIds, onExpand));
   }
   return wrapper;
 }
 
-function buildCard(thread, onJump, openIds, onToggle, names, onRename) {
+function buildCard(thread, onJump, openIds, onToggle, names, onRename, expandedIds, onExpand) {
   const card = el('details', 'thread');
   card.dataset.role = 'thread';
   card.dataset.rootId = thread.rootId;
@@ -227,7 +256,7 @@ function buildCard(thread, onJump, openIds, onToggle, names, onRename) {
   );
 
   card.appendChild(summary);
-  card.appendChild(buildNode(thread.tree, onJump));
+  card.appendChild(buildNode(thread.tree, onJump, expandedIds, onExpand));
   return card;
 }
 
@@ -238,11 +267,13 @@ function buildCard(thread, onJump, openIds, onToggle, names, onRename) {
  * @param {{hideEmpty: boolean, onJump: (messageId: string) => void,
  *   openIds?: Set<string>, onToggle?: (rootId: string, open: boolean) => void,
  *   names?: import('../core/threadNames.js').NameItems|null,
- *   onRename?: (key: string, name: string) => void}} options
+ *   onRename?: (key: string, name: string) => void,
+ *   expandedIds?: Set<string>,
+ *   onExpand?: (messageId: string, expanded: boolean) => void}} options
  */
 export function renderThreads(container, threads, options) {
   const { hideEmpty, onJump, openIds = null, onToggle = () => {}, names = null,
-    onRename = () => {} } = options;
+    onRename = () => {}, expandedIds = null, onExpand = () => {} } = options;
   container.textContent = '';
 
   if (!threads || threads.length === 0) {
@@ -258,7 +289,9 @@ export function renderThreads(container, threads, options) {
 
   const list = el('div', 'thread-list');
   for (const thread of visible) {
-    list.appendChild(buildCard(thread, onJump, openIds, onToggle, names, onRename));
+    list.appendChild(
+      buildCard(thread, onJump, openIds, onToggle, names, onRename, expandedIds, onExpand)
+    );
   }
   container.appendChild(list);
 }
