@@ -9,6 +9,19 @@ const MAX_WIDTH = 640;
 const DEFAULT_WIDTH = 360;
 const NOTICE_MS = 4000;
 
+/**
+ * 動いているビルドの版。どのコードが読み込まれているか分からないと、
+ * 拡張を再読み込みし忘れただけの状態を「直っていない」と誤診する。
+ * 拡張の外 (テスト) では manifest が取れないので 'dev' を返す。
+ */
+function panelVersion() {
+  try {
+    return chrome.runtime.getManifest().version;
+  } catch {
+    return 'dev';
+  }
+}
+
 function clampWidth(value) {
   if (!Number.isFinite(value)) return DEFAULT_WIDTH;
   return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(value)));
@@ -75,7 +88,7 @@ export function createPanel() {
     <button class="panel__reopen" data-role="reopen" type="button" aria-label="スレッドパネルを開く">«</button>
     <div class="panel__grip" data-role="grip" role="separator" aria-orientation="vertical"></div>
     <header class="panel__head">
-      <span class="panel__title">スレッド</span>
+      <span class="panel__title" data-role="title">スレッド</span>
       <span class="panel__count" data-role="count"></span>
       <span class="panel__spacer"></span>
       <button class="panel__btn" data-role="toggle-empty" type="button">全件表示</button>
@@ -85,6 +98,8 @@ export function createPanel() {
     <div class="panel__body" data-role="body"></div>
   `;
 
+  panel.dataset.version = panelVersion();
+
   // 配色は Chatwork 本体のテーマに合わせる。CSS は自前の data-theme だけを見る。
   panel.dataset.theme = getHostTheme();
   const stopThemeWatch = watchHostTheme((theme) => {
@@ -93,6 +108,10 @@ export function createPanel() {
 
   shadow.append(style, panel);
   document.body.appendChild(host);
+
+  // ホバーで版が読める。再読み込み忘れの切り分けに使う。
+  shadow.querySelector('[data-role="title"]').title =
+    `スレッドビュー for Chatwork ${panel.dataset.version}`;
 
   const body = shadow.querySelector('[data-role="body"]');
   const count = shadow.querySelector('[data-role="count"]');
