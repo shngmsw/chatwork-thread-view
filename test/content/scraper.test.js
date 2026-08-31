@@ -105,3 +105,63 @@ describe('parseMessage', () => {
     expect(parseMessage(broken, createScrapeContext(), 0)).toBeNull();
   });
 });
+
+// 実機の返信チップは「返信先ユーザー」のアイコンと名前を内側に持つ。
+// フィクスチャのチップは文字だけなので、この状況はここで組み立てる。
+describe('返信チップ内の返信先ユーザーを送信者と取り違えない', () => {
+  const SENDER_AID = '1111111';
+  const TARGET_AID = '9999999';
+
+  const speaker = (aid, name, avatar) => `
+    <div class="_speaker">
+      <button class="_profileUserIcon" data-aid="${aid}"></button>
+      <img class="userIconImage _avatarAid${aid}" src="${avatar}" alt="${name}">
+      <p data-testid="timeline_user-name">${name}</p>
+    </div>`;
+
+  // Chatwork は返信チップの中に返信先ユーザーのアイコンと名前を描画する。
+  const chip = `
+    <div class="_replyMessage" data-rid="R1" data-mid="100">
+      <button class="_profileUserIcon" data-aid="${TARGET_AID}"></button>
+      <img class="userIconImage _avatarAid${TARGET_AID}" src="https://cdn/target.png" alt="返信先 花子">
+      <p data-testid="timeline_user-name">返信先 花子</p>
+      <p>返信元</p>
+    </div>`;
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="_timeLine">
+        <div class="_message" data-rid="R1" data-mid="100" data-index="0" data-deleted="0">
+          ${speaker(SENDER_AID, '送信 太郎', 'https://cdn/sender.png')}
+          <div class="_timeStamp" data-tm="1000"></div>
+          <pre><span>親メッセージ</span></pre>
+        </div>
+        <div class="_message" data-rid="R1" data-mid="101" data-index="1" data-deleted="0">
+          <div class="_timeStamp" data-tm="1001"></div>
+          <pre>${chip}<span>連続投稿での返信</span></pre>
+        </div>
+      </div>`;
+  });
+
+  // 連続投稿では _speaker が省略され、メッセージ内に残る唯一の候補が
+  // チップ内の返信先ユーザーになる。
+  it('連続投稿の返信で、送信者の accountId を返信先で上書きしない', () => {
+    const [, consecutive] = parseTimeline(getMessageElements(document));
+    expect(consecutive.accountId).toBe(SENDER_AID);
+  });
+
+  it('連続投稿の返信で、送信者名を返信先の名前で上書きしない', () => {
+    const [, consecutive] = parseTimeline(getMessageElements(document));
+    expect(consecutive.userName).toBe('送信 太郎');
+  });
+
+  it('連続投稿の返信で、アイコンを返信先のアイコンで上書きしない', () => {
+    const [, consecutive] = parseTimeline(getMessageElements(document));
+    expect(consecutive.avatarUrl).toBe('https://cdn/sender.png');
+  });
+
+  it('返信先メッセージ ID はチップから読む', () => {
+    const [, consecutive] = parseTimeline(getMessageElements(document));
+    expect(consecutive.replyToId).toBe('100');
+  });
+});

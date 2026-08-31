@@ -12,6 +12,21 @@ function textOf(el) {
 }
 
 /**
+ * 返信チップの内側を除いて、最初に一致した要素を返す。
+ *
+ * チップには「返信先ユーザー」のアイコン・名前・data-aid が入っている。
+ * 連続投稿では送信者ブロック (_speaker) ごと省略されるため、除外しないと
+ * チップ内の返信先ユーザーがメッセージ内で唯一の候補になり、送信者として
+ * 採用されてしまう。本文と同じく、送信者情報もチップを見てはいけない。
+ */
+function querySender(el, selector) {
+  for (const found of el.querySelectorAll(selector)) {
+    if (!found.closest(SEL.replyChip)) return found;
+  }
+  return null;
+}
+
+/**
  * 連続投稿では送信者情報が DOM から省略される。直前の解析結果を持ち回るための状態。
  * @returns {{nameByAid: Map<string,string>, lastAccountId: string, lastUserName: string, lastAvatarUrl: string}}
  */
@@ -38,10 +53,10 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
     const roomId = el.getAttribute('data-rid') || '';
     const prevAccountId = ctx.lastAccountId;
 
-    // 先頭の [data-aid] は返信チップ内の「返信先ユーザー」を指すことがあるため使わない。
-    let accountId = el.querySelector(SEL.profileIcon)?.getAttribute('data-aid') || '';
+    // 送信者を指す要素はいずれも返信チップの外から取る (querySender)。
+    let accountId = querySender(el, SEL.profileIcon)?.getAttribute('data-aid') || '';
     if (!accountId) {
-      const avatarNode = el.querySelector(SEL.avatarAidClass);
+      const avatarNode = querySender(el, SEL.avatarAidClass);
       const matched = avatarNode && AVATAR_AID.exec(avatarNode.getAttribute('class') || '');
       if (matched) accountId = matched[1];
     }
@@ -49,9 +64,9 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
 
     const sameSenderAsPrev = Boolean(accountId) && accountId === prevAccountId;
 
-    const avatarEl = el.querySelector(SEL.avatar);
+    const avatarEl = querySender(el, SEL.avatar);
     let userName =
-      textOf(el.querySelector(SEL.userName)) ||
+      textOf(querySender(el, SEL.userName)) ||
       (avatarEl?.getAttribute('alt') || '').trim();
     if (userName) {
       if (accountId) ctx.nameByAid.set(accountId, userName);
@@ -67,7 +82,7 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
       (sameSenderAsPrev ? ctx.lastAvatarUrl : '') ||
       '';
 
-    const tmAttr = el.querySelector(SEL.timeStamp)?.getAttribute('data-tm');
+    const tmAttr = querySender(el, SEL.timeStamp)?.getAttribute('data-tm');
     const timestamp = tmAttr ? Number(tmAttr) : 0;
 
     // 親メッセージ ID は返信チップの data-mid にある。本文には [rp] が残らない。
