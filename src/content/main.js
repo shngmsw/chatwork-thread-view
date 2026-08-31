@@ -7,6 +7,7 @@ import { createNameStore } from './nameStore.js';
 import { resolveName } from '../core/threadNames.js';
 import { startObserver } from './observer.js';
 import { jumpToMessage } from './navigator.js';
+import { insertReply } from './composer.js';
 import { TOGGLE_PANEL } from '../core/messages.js';
 
 const state = {
@@ -144,6 +145,12 @@ export function refresh() {
     onToggle: (rootId, open) => {
       if (open) state.openIds.add(rootId);
       else state.openIds.delete(rootId);
+    },
+    onReply: (message) => {
+      if (insertReply(message)) return;
+      // 入力欄が無い画面 (検索結果など) か、Chatwork 側の作りが変わったか。
+      // どちらも利用者から見れば「今は返信できない」なので区別しない。
+      state.panel.showNotice('この画面では返信できませんでした。');
     },
     onJump: (messageId) => {
       if (jumpToMessage(messageId)) return;

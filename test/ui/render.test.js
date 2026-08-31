@@ -332,3 +332,24 @@ describe('返信ノードの全文表示', () => {
     expect(node.classList.contains('node--open')).toBe(false);
   });
 });
+
+describe('返信ボタン', () => {
+  const threads = () =>
+    buildThreads([msg('1', { timestamp: 100 }), reply('2', '1', { timestamp: 200 })]);
+  const nodeOf = (id) => container.querySelector(`[data-role="node"][data-message-id="${id}"]`);
+
+  it('押すと onReply がそのメッセージで呼ばれる', () => {
+    const onReply = vi.fn();
+    renderThreads(container, threads(), { hideEmpty: true, onJump: () => {}, onReply });
+    nodeOf('2').querySelector('[data-role="reply"]').click();
+    expect(onReply).toHaveBeenCalledTimes(1);
+    expect(onReply.mock.calls[0][0].id).toBe('2');
+  });
+
+  it('押しても全文は開閉しない', () => {
+    renderThreads(container, threads(), { hideEmpty: true, onJump: () => {}, onReply: () => {} });
+    const node = nodeOf('2');
+    node.querySelector('[data-role="reply"]').click();
+    expect(node.classList.contains('node--open')).toBe(false);
+  });
+});

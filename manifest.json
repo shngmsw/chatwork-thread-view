@@ -41,6 +41,8 @@
         "src/core/threadNames.js",
         "src/core/types.js",
         "src/content/nameStore.js",
+        "src/content/replyTag.js",
+        "src/content/composer.js",
         "src/core/messages.js",
         "src/ui/panel.js",
         "src/ui/render.js",

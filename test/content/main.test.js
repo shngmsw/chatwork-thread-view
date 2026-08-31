@@ -242,3 +242,30 @@ describe('返信ノードの全文展開', () => {
     expect(nodeOf().classList.contains('node--open')).toBe(true);
   });
 });
+
+describe('パネルからの返信', () => {
+  const replyBtn = () =>
+    main
+      .getPanel()
+      .shadow.querySelector(`[data-role="node"][data-message-id="${REPLY_ID}"] [data-role="reply"]`);
+
+  it('返信ボタンで Chatwork の入力欄に返信記法が入る', async () => {
+    document.body.innerHTML = `${FIXTURE}<textarea id="_chatText"></textarea>`;
+    await boot();
+
+    replyBtn().click();
+
+    const input = document.getElementById('_chatText');
+    expect(input.value).toMatch(new RegExp(`^\\[rp aid=\\d+ to=\\d+-${REPLY_ID}\\]`));
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('入力欄が無ければ通知を出す', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+
+    replyBtn().click();
+
+    expect(panelText()).toContain('返信できませんでした');
+  });
+});

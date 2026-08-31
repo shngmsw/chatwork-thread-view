@@ -405,7 +405,7 @@ export const PANEL_CSS = `
   margin-left: auto;
   font-variant-numeric: tabular-nums;
 }
-.node__jump {
+.node__action {
   border: none;
   background: transparent;
   color: var(--text-faint);
@@ -419,10 +419,10 @@ export const PANEL_CSS = `
   flex: 0 0 auto;
   transition: opacity var(--ease), color var(--ease), background var(--ease);
 }
-.node:hover .node__jump,
-.node__jump:focus-visible { opacity: 1; }
-.node__jump:hover { color: var(--accent-text); background: var(--accent-weak); }
-.node__jump:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.node:hover .node__action,
+.node__action:focus-visible { opacity: 1; }
+.node__action:hover { color: var(--accent-text); background: var(--accent-weak); }
+.node__action:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ---- diagnostic ---- */
 .diagnostic {

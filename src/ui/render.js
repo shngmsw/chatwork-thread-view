@@ -99,7 +99,7 @@ function stateMessage(text, modifier) {
   return el('div', modifier ? `state ${modifier}` : 'state', text);
 }
 
-function buildNode(node, onJump, expandedIds, onExpand) {
+function buildNode(node, onJump, expandedIds, onExpand, onReply) {
   const messageId = node.message.id;
   const row = el('div', 'node');
   row.dataset.role = 'node';
@@ -113,9 +113,19 @@ function buildNode(node, onJump, expandedIds, onExpand) {
     el('span', 'node__time', formatRelative(node.message.timestamp))
   );
 
+  const replyBtn = el('button', 'node__action', '↩');
+  replyBtn.type = 'button';
+  replyBtn.dataset.role = 'reply';
+  replyBtn.setAttribute('aria-label', 'このメッセージに返信');
+  replyBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    onReply(node.message);
+  });
+  head.appendChild(replyBtn);
+
   // タイムラインへ飛ぶ口は独立したボタンにする。本文クリックは開閉に使うため、
   // 同じ操作に 2 つの意味を持たせない。
-  const jumpBtn = el('button', 'node__jump', '↗');
+  const jumpBtn = el('button', 'node__action', '↗');
   jumpBtn.type = 'button';
   jumpBtn.dataset.role = 'jump';
   jumpBtn.setAttribute('aria-label', 'タイムラインの該当位置へ移動');
@@ -156,12 +166,14 @@ function buildNode(node, onJump, expandedIds, onExpand) {
   if (node.depth > 0 && node.depth <= 6) wrapper.style.marginLeft = '14px';
   wrapper.appendChild(row);
   for (const child of node.children) {
-    wrapper.appendChild(buildNode(child, onJump, expandedIds, onExpand));
+    wrapper.appendChild(buildNode(child, onJump, expandedIds, onExpand, onReply));
   }
   return wrapper;
 }
 
-function buildCard(thread, onJump, openIds, onToggle, names, onRename, expandedIds, onExpand) {
+function buildCard(
+  thread, onJump, openIds, onToggle, names, onRename, expandedIds, onExpand, onReply
+) {
   const card = el('details', 'thread');
   card.dataset.role = 'thread';
   card.dataset.rootId = thread.rootId;
@@ -256,7 +268,7 @@ function buildCard(thread, onJump, openIds, onToggle, names, onRename, expandedI
   );
 
   card.appendChild(summary);
-  card.appendChild(buildNode(thread.tree, onJump, expandedIds, onExpand));
+  card.appendChild(buildNode(thread.tree, onJump, expandedIds, onExpand, onReply));
   return card;
 }
 
@@ -269,11 +281,13 @@ function buildCard(thread, onJump, openIds, onToggle, names, onRename, expandedI
  *   names?: import('../core/threadNames.js').NameItems|null,
  *   onRename?: (key: string, name: string) => void,
  *   expandedIds?: Set<string>,
- *   onExpand?: (messageId: string, expanded: boolean) => void}} options
+ *   onExpand?: (messageId: string, expanded: boolean) => void,
+ *   onReply?: (message: import('../core/types.js').ChatworkMessage) => void}} options
  */
 export function renderThreads(container, threads, options) {
   const { hideEmpty, onJump, openIds = null, onToggle = () => {}, names = null,
-    onRename = () => {}, expandedIds = null, onExpand = () => {} } = options;
+    onRename = () => {}, expandedIds = null, onExpand = () => {},
+    onReply = () => {} } = options;
   container.textContent = '';
 
   if (!threads || threads.length === 0) {
@@ -290,7 +304,9 @@ export function renderThreads(container, threads, options) {
   const list = el('div', 'thread-list');
   for (const thread of visible) {
     list.appendChild(
-      buildCard(thread, onJump, openIds, onToggle, names, onRename, expandedIds, onExpand)
+      buildCard(
+        thread, onJump, openIds, onToggle, names, onRename, expandedIds, onExpand, onReply
+      )
     );
   }
   container.appendChild(list);
