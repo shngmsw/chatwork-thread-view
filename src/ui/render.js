@@ -113,10 +113,12 @@ function buildNode(node, onJump, expandedIds, onExpand, onReply) {
     el('span', 'node__time', formatRelative(node.message.timestamp))
   );
 
-  const replyBtn = el('button', 'node__action', '↩');
+  // 記号だけでは意味が伝わらず、↩ は環境によって絵文字体で描画される。
+  // 幅は食うが日本語のラベルを置く。
+  const replyBtn = el('button', 'node__action', '返信');
   replyBtn.type = 'button';
   replyBtn.dataset.role = 'reply';
-  replyBtn.setAttribute('aria-label', 'このメッセージに返信');
+  replyBtn.title = 'このメッセージに返信';
   replyBtn.addEventListener('click', (event) => {
     event.stopPropagation();
     onReply(node.message);
@@ -125,10 +127,10 @@ function buildNode(node, onJump, expandedIds, onExpand, onReply) {
 
   // タイムラインへ飛ぶ口は独立したボタンにする。本文クリックは開閉に使うため、
   // 同じ操作に 2 つの意味を持たせない。
-  const jumpBtn = el('button', 'node__action', '↗');
+  const jumpBtn = el('button', 'node__action', '移動');
   jumpBtn.type = 'button';
   jumpBtn.dataset.role = 'jump';
-  jumpBtn.setAttribute('aria-label', 'タイムラインの該当位置へ移動');
+  jumpBtn.title = 'タイムラインの該当位置へ移動';
   jumpBtn.addEventListener('click', (event) => {
     event.stopPropagation();
     onJump(messageId);

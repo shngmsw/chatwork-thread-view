@@ -376,9 +376,11 @@ export const PANEL_CSS = `
   font-weight: 600;
   white-space: nowrap;
   color: var(--text);
-  /* 縮ませない。縮むと「鈴…」のように 1 文字まで潰れて誰の発言か分からなくなる。
-     長すぎる名前だけを max-width で省略する。 */
-  flex: 0 0 auto;
+  /* 返信・移動のラベルが並ぶ分、深い階層では名前を縮めるしかない。
+     ただし「鈴…」のように 1 文字まで潰れると誰の発言か分からなくなるので、
+     min-width で床を張る。長すぎる名前は max-width で省略する。 */
+  flex: 0 1 auto;
+  min-width: 3em;
   max-width: 10em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -406,22 +408,28 @@ export const PANEL_CSS = `
   font-variant-numeric: tabular-nums;
 }
 .node__action {
-  border: none;
-  background: transparent;
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: var(--text-faint);
   font: inherit;
-  font-size: 12px;
-  line-height: 1;
-  padding: 2px 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 1px 6px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   opacity: 0;
   flex: 0 0 auto;
-  transition: opacity var(--ease), color var(--ease), background var(--ease);
+  white-space: nowrap;
+  transition: opacity var(--ease), color var(--ease),
+    background var(--ease), border-color var(--ease);
 }
 .node:hover .node__action,
 .node__action:focus-visible { opacity: 1; }
-.node__action:hover { color: var(--accent-text); background: var(--accent-weak); }
+.node__action:hover {
+  color: var(--accent-text);
+  background: var(--accent-weak);
+  border-color: var(--accent);
+}
 .node__action:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ---- diagnostic ---- */
