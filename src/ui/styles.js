@@ -19,8 +19,8 @@ export const PANEL_CSS = `
   --border: #e3eaea;
   --border-strong: #cfdada;
   --text: #0e1a1b;
-  --text-dim: #5c7173;
-  --text-faint: #8ba0a2;
+  --text-dim: #3f5254;
+  --text-faint: #5c7275;
   --accent: #0f8a83;
   --accent-text: #0b6f69;
   --accent-weak: rgba(15, 138, 131, 0.10);
@@ -38,11 +38,10 @@ export const PANEL_CSS = `
   flex-direction: column;
   background: var(--bg);
   border-left: 1px solid var(--border);
-  font-family: "Hiragino Sans", "Yu Gothic", -apple-system, system-ui, sans-serif;
-  font-size: 13px;
-  line-height: 1.65;
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
   color: var(--text);
-  -webkit-font-smoothing: antialiased;
 }
 .panel[data-theme="dark"] {
   --bg: #10151800;
@@ -53,7 +52,7 @@ export const PANEL_CSS = `
   --border-strong: #35434a;
   --text: #e4ecee;
   --text-dim: #96a8ab;
-  --text-faint: #6f8286;
+  --text-faint: #7e9296;
   --accent: #34b6ab;
   --accent-text: #57c9bf;
   --accent-weak: rgba(52, 182, 171, 0.14);
@@ -236,6 +235,9 @@ export const PANEL_CSS = `
   color: #ffffff;
   user-select: none;
   flex: 0 0 auto;
+  /* img と div の両方がこのクラスを使う。画像は円に切り抜く。 */
+  object-fit: cover;
+  background-color: var(--surface-3);
 }
 .thread__head {
   grid-area: head;
@@ -257,10 +259,39 @@ export const PANEL_CSS = `
   margin-left: auto;
   font-variant-numeric: tabular-nums;
 }
+.thread__rename {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ease), color var(--ease), background var(--ease);
+}
+.thread__summary:hover .thread__rename,
+.thread__rename:focus-visible { opacity: 1; }
+.thread__rename:hover { color: var(--accent-text); background: var(--accent-weak); }
+.thread__rename:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.thread__input {
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.thread__input:focus { outline: none; }
 .thread__preview {
   grid-area: preview;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: 13px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -283,6 +314,13 @@ export const PANEL_CSS = `
   padding: 0 7px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+.thread__owner {
+  color: var(--text-dim);
+  max-width: 10em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .thread__badge {
   color: var(--warn-text);
@@ -321,41 +359,78 @@ export const PANEL_CSS = `
   opacity: 0.6;
 }
 .node {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  padding: 5px 12px;
+  padding: 6px 12px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   border-radius: var(--radius-sm);
   transition: background var(--ease);
 }
 .node:hover { background: var(--surface-3); }
 .node:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.node__head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
 .node__name {
   font-weight: 600;
   white-space: nowrap;
   color: var(--text);
-  /* 縮ませない。縮むと「鈴…」のように 1 文字まで潰れて誰の発言か分からなくなる。
-     長すぎる名前だけを max-width で省略する。 */
-  flex: 0 0 auto;
-  max-width: 7em;
+  /* 返信・移動のラベルが並ぶ分、深い階層では名前を縮めるしかない。
+     ただし「鈴…」のように 1 文字まで潰れると誰の発言か分からなくなるので、
+     min-width で床を張る。長すぎる名前は max-width で省略する。 */
+  flex: 0 1 auto;
+  min-width: 3em;
+  max-width: 10em;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .node__body {
   color: var(--text-dim);
+  /* 全文を持たせ、畳むのは CSS の役目。Chatwork の改行をそのまま見せる。 */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1 1 auto;
 }
+.node--open .node__body {
+  display: block;
+  overflow: visible;
+}
+.node__body:empty { display: none; }
 .node__time {
   color: var(--text-faint);
   font-size: 11px;
   white-space: nowrap;
+  margin-left: auto;
   font-variant-numeric: tabular-nums;
 }
+.node__action {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  transition: opacity var(--ease), color var(--ease),
+    background var(--ease), border-color var(--ease);
+}
+.node:hover .node__action,
+.node__action:focus-visible { opacity: 1; }
+.node__action:hover {
+  color: var(--accent-text);
+  background: var(--accent-weak);
+  border-color: var(--accent);
+}
+.node__action:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ---- diagnostic ---- */
 .diagnostic {

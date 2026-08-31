@@ -85,3 +85,11 @@ describe('createPanel の返信ゼロ切替', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 });
+
+// どのビルドが動いているか分からないと、修正が反映されていないだけの状態を
+// 「直っていない」と誤診する。パネル自身に版を持たせて確認できるようにする。
+describe('読み込まれているビルドの確認', () => {
+  it('パネルにバージョンを持たせる', () => {
+    expect(panel.shadow.querySelector('.panel').dataset.version).toBeTruthy();
+  });
+});

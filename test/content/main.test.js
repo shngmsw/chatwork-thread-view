@@ -147,7 +147,7 @@ describe('未読み込みメッセージの通知', () => {
     document.getElementById(`_messageId${REPLY_ID}`).remove();
     main
       .getPanel()
-      .shadow.querySelector(`[data-role="node"][data-message-id="${REPLY_ID}"]`)
+      .shadow.querySelector(`[data-role="node"][data-message-id="${REPLY_ID}"] [data-role="jump"]`)
       .click();
     expect(panelText()).toContain('まだ読み込まれていません');
 
@@ -196,5 +196,76 @@ describe('ツールバーのアイコンからの開閉', () => {
     await boot();
     expect(() => main.listenForToggle(null)).not.toThrow();
     expect(() => main.listenForToggle({})).not.toThrow();
+  });
+});
+
+describe('スレッド名の編集', () => {
+  const shadowOf = () => main.getPanel().shadow;
+
+  it('編集中の再描画で入力欄と書きかけの内容を壊さない', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+    shadowOf().querySelector('[data-role="rename"]').click();
+    const input = shadowOf().querySelector('[data-role="rename-input"]');
+    input.value = '書きかけの名前';
+
+    // Chatwork の新着で observer が走った状況。
+    main.refresh();
+
+    expect(shadowOf().querySelector('[data-role="rename-input"]')).toBe(input);
+    expect(input.value).toBe('書きかけの名前');
+  });
+
+  it('確定するとカード見出しに名前が出る', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+    shadowOf().querySelector('[data-role="rename"]').click();
+    const input = shadowOf().querySelector('[data-role="rename-input"]');
+    input.value = '請求書フォーマットの件';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(shadowOf().querySelector('.thread__name').textContent).toBe('請求書フォーマットの件');
+  });
+});
+
+describe('返信ノードの全文展開', () => {
+  it('展開した状態は再描画をまたいで残る', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+    const nodeOf = () =>
+      main.getPanel().shadow.querySelector(`[data-role="node"][data-message-id="${REPLY_ID}"]`);
+
+    nodeOf().click();
+    expect(nodeOf().classList.contains('node--open')).toBe(true);
+
+    main.refresh();
+    expect(nodeOf().classList.contains('node--open')).toBe(true);
+  });
+});
+
+describe('パネルからの返信', () => {
+  const replyBtn = () =>
+    main
+      .getPanel()
+      .shadow.querySelector(`[data-role="node"][data-message-id="${REPLY_ID}"] [data-role="reply"]`);
+
+  it('返信ボタンで Chatwork の入力欄に返信記法が入る', async () => {
+    document.body.innerHTML = `${FIXTURE}<textarea id="_chatText"></textarea>`;
+    await boot();
+
+    replyBtn().click();
+
+    const input = document.getElementById('_chatText');
+    expect(input.value).toMatch(new RegExp(`^\\[rp aid=\\d+ to=\\d+-${REPLY_ID}\\]`));
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('入力欄が無ければ通知を出す', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+
+    replyBtn().click();
+
+    expect(panelText()).toContain('返信できませんでした');
   });
 });

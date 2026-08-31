@@ -1,18 +1,26 @@
 import { createPanel } from '../ui/panel.js';
 import { renderThreads } from '../ui/render.js';
-import { getMessageElements, runHealthCheck } from './selectors.js';
+import { getMessageElements, runHealthCheck, getCurrentRoomId } from './selectors.js';
 import { createScrapeContext, parseTimeline } from './scraper.js';
 import { buildThreads } from '../core/threadTree.js';
+import { createNameStore } from './nameStore.js';
+import { resolveName } from '../core/threadNames.js';
 import { startObserver } from './observer.js';
 import { jumpToMessage } from './navigator.js';
+import { insertReply } from './composer.js';
 import { TOGGLE_PANEL } from '../core/messages.js';
 
 const state = {
   panel: null,
   hideEmpty: true,
+  // スレッド名の読み書き。ストレージの形式は nameStore の中に閉じる。
+  store: null,
+  names: {},
   stopObserver: null,
   // 開いているスレッドの rootId。再描画をまたいで開閉状態を保つ。
   openIds: new Set(),
+  // 全文を開いている返信メッセージの ID。同じく再描画をまたいで保つ。
+  expandedIds: new Set(),
   // 健全でなくなった時刻。復旧すれば null に戻す。
   // 「一度描画に成功したか」を門にすると、起動時点で既に壊れている場合に
   // その条件自体がフラグの成立を妨げて永久に報告されない。時間で判断する。
@@ -94,6 +102,11 @@ function shouldReportHealth(health, now = Date.now()) {
 export function refresh() {
   if (!state.panel) return;
 
+  // 名前を編集している間は描画をやり直さない。renderThreads は中身を作り直すため、
+  // Chatwork に新着が来て observer が走るたびに入力欄ごと消え、書きかけが失われる。
+  // 確定・取消のあとは目印が外れるので、次の変更で通常どおり描画される。
+  if (state.panel.body.querySelector('[data-role="rename-input"]')) return;
+
   const messages = parseTimeline(getMessageElements(document), createScrapeContext());
   const health = runHealthCheck(messages, document);
   if (shouldReportHealth(health)) {
@@ -103,13 +116,41 @@ export function refresh() {
   }
 
   const threads = buildThreads(messages);
+
+  // root が入れ替わったスレッドの名前を新しい rootId へ寄せておく。
+  // 放っておいても resolveName が子孫まで辿るので表示は壊れないが、
+  // 毎回の探索が積み上がるのでここで正規化する。
+  for (const thread of threads) {
+    const resolved = state.store && resolveName(thread, state.names);
+    if (resolved && resolved.key !== thread.rootId) {
+      state.store.rekey(resolved.key, thread.rootId);
+      state.names = state.store.getItems();
+    }
+  }
+
   state.panel.setCount(threads.filter((t) => t.replyCount > 0).length);
   renderThreads(state.panel.body, threads, {
     hideEmpty: state.hideEmpty,
     openIds: state.openIds,
+    expandedIds: state.expandedIds,
+    onExpand: (messageId, expanded) => {
+      if (expanded) state.expandedIds.add(messageId);
+      else state.expandedIds.delete(messageId);
+    },
+    names: state.names,
+    onRename: (key, name) => {
+      state.names = state.store.setName(key, name, 'user');
+      refresh();
+    },
     onToggle: (rootId, open) => {
       if (open) state.openIds.add(rootId);
       else state.openIds.delete(rootId);
+    },
+    onReply: (message) => {
+      if (insertReply(message)) return;
+      // 入力欄が無い画面 (検索結果など) か、Chatwork 側の作りが変わったか。
+      // どちらも利用者から見れば「今は返信できない」なので区別しない。
+      state.panel.showNotice('この画面では返信できませんでした。');
     },
     onJump: (messageId) => {
       if (jumpToMessage(messageId)) return;
@@ -126,6 +167,12 @@ export function boot() {
   state.panel = createPanel();
   if (!state.panel) return;
 
+  state.store = createNameStore();
+  state.store.load(getCurrentRoomId()).then((items) => {
+    state.names = items;
+    refresh();
+  });
+
   state.panel.onToggleHideEmpty((hideEmpty) => {
     state.hideEmpty = hideEmpty;
     refresh();
@@ -135,9 +182,15 @@ export function boot() {
 
   state.stopObserver = startObserver({
     onChange: refresh,
-    onRoomChange: () => {
+    onRoomChange: (roomId) => {
       // ルームが変わったら前ルームの表示も開閉状態も残さない。
       state.openIds.clear();
+      state.expandedIds.clear();
+      state.names = {};
+      state.store.load(roomId).then((items) => {
+        state.names = items;
+        refresh();
+      });
       state.panel.clearNotice();
       state.panel.body.textContent = '';
       refresh();
@@ -159,7 +212,14 @@ export function teardown() {
     state.panel.destroy();
     state.panel = null;
   }
+  if (state.store) {
+    state.store.flush();
+    state.store.stop();
+    state.store = null;
+  }
+  state.names = {};
   state.openIds.clear();
+  state.expandedIds.clear();
   state.hideEmpty = true;
   state.unhealthySince = null;
 }

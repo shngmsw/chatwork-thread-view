@@ -742,7 +742,7 @@ footer { padding: 3rem 0; border-top: 1px solid var(--line); background: var(--b
           </svg>
         </span>
         <h3>メッセージを保存しません</h3>
-        <p>読み取った内容は、その場の表示に使うだけです。端末に残すのは、パネルの幅と、開いているかどうかの 2 つだけです。</p>
+        <p>読み取った内容は、その場の表示に使うだけです。端末に残すのは、パネルの幅と開閉状態、そしてあなたが自分で付けたスレッド名だけです。</p>
       </div>
       <div class="card">
         <span class="chip">
@@ -864,7 +864,7 @@ footer { padding: 3rem 0; border-top: 1px solid var(--line); background: var(--b
   <div class="wrap wrap--narrow policy">
     <div class="head">
       <h2>プライバシーポリシー</h2>
-      <p class="updated">最終更新日　2026年8月30日</p>
+      <p class="updated">最終更新日　2026年8月31日</p>
     </div>
 
     <p>本拡張は、いかなる情報も収集・送信・第三者提供しません。外部サーバーとの通信を行うコードを含んでおらず、すべての処理はお使いのブラウザの中だけで完結します。</p>
@@ -888,13 +888,14 @@ footer { padding: 3rem 0; border-top: 1px solid var(--line); background: var(--b
     </ul>
 
     <h3>3. 端末に保存する情報</h3>
-    <p>Chrome の storage 権限を用いて、次の 2 つのみを端末内に保存します。外部へ送信されることはなく、拡張機能を削除すると同時に消去されます。</p>
+    <p>Chrome の storage 権限を用いて、次の値のみを端末内に保存します。外部へ送信されることはなく、拡張機能を削除すると同時に消去されます。</p>
     <div class="table-scroll">
       <table>
         <thead><tr><th>保存する値</th><th>内容</th></tr></thead>
         <tbody>
           <tr><td>パネルの幅</td><td>数値（ピクセル）</td></tr>
           <tr><td>パネルの開閉状態</td><td>開いている / 閉じている</td></tr>
+          <tr><td>スレッド名</td><td>あなたが自分で入力した文字列（ルームごとに保存）</td></tr>
         </tbody>
       </table>
     </div>
@@ -907,7 +908,7 @@ footer { padding: 3rem 0; border-top: 1px solid var(--line); background: var(--b
       <table>
         <thead><tr><th>権限</th><th>理由</th></tr></thead>
         <tbody>
-          <tr><td>storage</td><td>上記のパネル表示設定を保存するため</td></tr>
+          <tr><td>storage</td><td>上記のパネル表示設定とスレッド名を保存するため</td></tr>
           <tr><td>www.chatwork.com</td><td>Chatwork の画面上で動作し、表示中のメッセージを読み取ってパネルを追加するため</td></tr>
           <tr><td>kcw.kddi.ne.jp</td><td>KDDI が提供する Chatwork でも同様に動作するため</td></tr>
         </tbody>

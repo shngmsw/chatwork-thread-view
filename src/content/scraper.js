@@ -1,7 +1,5 @@
 import { SEL, UNKNOWN_NAME } from './selectors.js';
 
-const AVATAR_AID = /(?:^|\s)_avatarAid(\d+)(?:\s|$)/;
-
 /**
  * jsdom は innerText を実装しないため textContent を使う。
  * ノーブレークスペースは通常の空白に寄せてから trim する。
@@ -12,15 +10,33 @@ function textOf(el) {
 }
 
 /**
+ * 本文 (pre) の外側で最初に一致した要素を返す。
+ *
+ * 送信者名はヘッダにあり、本文の中には入らない。一方、メンション・タスク・
+ * 返信チップといった「別人を指す要素」はすべて本文の内側にある。
+ * この境界で絞ると、別人の名前を送信者名として拾わずに済む。
+ */
+function queryHeader(el, selector) {
+  for (const found of el.querySelectorAll(selector)) {
+    if (!found.closest(SEL.body)) return found;
+  }
+  return null;
+}
+
+/**
  * 連続投稿では送信者情報が DOM から省略される。直前の解析結果を持ち回るための状態。
- * @returns {{nameByAid: Map<string,string>, lastAccountId: string, lastUserName: string, lastAvatarUrl: string}}
+ *
+ * 名前もアイコンも「直前の 1 件」ではなくアカウント ID ごとに持つ。直前の 1 件で
+ * 持つと、アイコンを取れない送信者を挟んだときに別人のアイコンが引き継がれる。
+ * @returns {{nameByAid: Map<string,string>, avatarByAid: Map<string,string>,
+ *   lastAccountId: string, lastUserName: string}}
  */
 export function createScrapeContext() {
   return {
     nameByAid: new Map(),
+    avatarByAid: new Map(),
     lastAccountId: '',
     lastUserName: '',
-    lastAvatarUrl: '',
   };
 }
 
@@ -38,20 +54,16 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
     const roomId = el.getAttribute('data-rid') || '';
     const prevAccountId = ctx.lastAccountId;
 
-    // 先頭の [data-aid] は返信チップ内の「返信先ユーザー」を指すことがあるため使わない。
-    let accountId = el.querySelector(SEL.profileIcon)?.getAttribute('data-aid') || '';
-    if (!accountId) {
-      const avatarNode = el.querySelector(SEL.avatarAidClass);
-      const matched = avatarNode && AVATAR_AID.exec(avatarNode.getAttribute('class') || '');
-      if (matched) accountId = matched[1];
-    }
+    // 送信者は _speaker の内側からだけ取る。本文にはメンションやタスクの
+    // 別人のアバターが入っており、限定しないとそれを送信者と取り違える。
+    let accountId = el.querySelector(SEL.senderAid)?.getAttribute('data-aid') || '';
     if (!accountId) accountId = prevAccountId;
 
     const sameSenderAsPrev = Boolean(accountId) && accountId === prevAccountId;
 
     const avatarEl = el.querySelector(SEL.avatar);
     let userName =
-      textOf(el.querySelector(SEL.userName)) ||
+      textOf(queryHeader(el, SEL.userName)) ||
       (avatarEl?.getAttribute('alt') || '').trim();
     if (userName) {
       if (accountId) ctx.nameByAid.set(accountId, userName);
@@ -62,10 +74,12 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
         UNKNOWN_NAME;
     }
 
+    // アイコンはアカウント ID に紐づけて覚える。連続投稿で DOM から消えても、
+    // 同じアカウントの過去の投稿から引ける。取れなければバッジに落とす。
+    const scrapedAvatar = avatarEl?.getAttribute('src') || '';
+    if (scrapedAvatar && accountId) ctx.avatarByAid.set(accountId, scrapedAvatar);
     const avatarUrl =
-      avatarEl?.getAttribute('src') ||
-      (sameSenderAsPrev ? ctx.lastAvatarUrl : '') ||
-      '';
+      scrapedAvatar || (accountId && ctx.avatarByAid.get(accountId)) || '';
 
     const tmAttr = el.querySelector(SEL.timeStamp)?.getAttribute('data-tm');
     const timestamp = tmAttr ? Number(tmAttr) : 0;
@@ -90,7 +104,6 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
 
     ctx.lastAccountId = accountId;
     ctx.lastUserName = userName;
-    if (avatarUrl) ctx.lastAvatarUrl = avatarUrl;
 
     return {
       id,
