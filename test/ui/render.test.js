@@ -242,3 +242,38 @@ describe('スレッド名の編集', () => {
     expect(card.open).toBe(before);
   });
 });
+
+describe('アバター', () => {
+  const withAvatar = (avatarUrl, userName = '三沢慎吾') =>
+    buildThreads([
+      msg('1', { userName, avatarUrl, timestamp: 100 }),
+      reply('2', '1', { timestamp: 200 }),
+    ]);
+
+  it('avatarUrl があれば本人の画像を出す', () => {
+    renderThreads(container, withAvatar('https://example.com/a.png'), {
+      hideEmpty: true,
+      onJump: () => {},
+    });
+    const img = container.querySelector('img.avatar');
+    expect(img).not.toBeNull();
+    expect(img.getAttribute('src')).toBe('https://example.com/a.png');
+  });
+
+  it('avatarUrl が無ければ頭文字のバッジを出す', () => {
+    renderThreads(container, withAvatar(''), { hideEmpty: true, onJump: () => {} });
+    expect(container.querySelector('img.avatar')).toBeNull();
+    expect(container.querySelector('div.avatar').textContent).toBe('三');
+  });
+
+  // 画像は Chatwork の CDN 頼み。落ちたときに丸ごと消えると誰の発言か分からなくなる。
+  it('画像の読み込みに失敗したら頭文字のバッジに戻す', () => {
+    renderThreads(container, withAvatar('https://example.com/broken.png'), {
+      hideEmpty: true,
+      onJump: () => {},
+    });
+    container.querySelector('img.avatar').dispatchEvent(new Event('error'));
+    expect(container.querySelector('img.avatar')).toBeNull();
+    expect(container.querySelector('div.avatar').textContent).toBe('三');
+  });
+});

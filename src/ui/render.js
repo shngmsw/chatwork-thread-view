@@ -44,11 +44,37 @@ function initial(name) {
   return trimmed ? trimmed.slice(0, 1) : '?';
 }
 
-function buildAvatar(message) {
+function buildAvatarBadge(message) {
   const node = el('div', 'avatar', initial(message.userName));
   node.style.background = avatarColor(message.accountId || message.userName);
   node.setAttribute('aria-hidden', 'true');
   return node;
+}
+
+/**
+ * 本人のアイコン画像を出す。URL が取れないときだけ頭文字のバッジに落ちる。
+ * バッジの色は accountId から決まるが、accountId は連続投稿で直前の送信者から
+ * 継承する都合で取れたり取れなかったりするため、同じ人が別の色になることがある。
+ * 画像が出せるならそちらが常に正しい。
+ */
+function buildAvatar(message) {
+  if (!message.avatarUrl) return buildAvatarBadge(message);
+
+  const img = el('img', 'avatar');
+  img.src = message.avatarUrl;
+  img.alt = '';
+  img.decoding = 'async';
+  img.setAttribute('aria-hidden', 'true');
+  // CDN が落ちたり URL が古かったりしたときに、丸ごと消えて誰の発言か
+  // 分からなくなるのを防ぐ。
+  img.addEventListener(
+    'error',
+    () => {
+      img.replaceWith(buildAvatarBadge(message));
+    },
+    { once: true }
+  );
+  return img;
 }
 
 // 開閉インジケータ。色は CSS のトークンから currentColor 経由で受け取る。

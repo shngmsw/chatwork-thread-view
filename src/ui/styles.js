@@ -236,6 +236,9 @@ export const PANEL_CSS = `
   color: #ffffff;
   user-select: none;
   flex: 0 0 auto;
+  /* img と div の両方がこのクラスを使う。画像は円に切り抜く。 */
+  object-fit: cover;
+  background-color: var(--surface-3);
 }
 .thread__head {
   grid-area: head;
