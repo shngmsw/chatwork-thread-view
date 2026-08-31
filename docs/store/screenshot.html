@@ -146,7 +146,7 @@
   .room__members .mem {
     width: 22px; height: 22px; border-radius: 50%; margin-left: -5px;
     border: 2px solid var(--head);
-    display: grid; place-items: center; color: #fff; font-size: 9px; font-weight: 700;
+    object-fit: cover;
   }
   .room__invite {
     font-size: 11.5px; padding: 2px 9px; border-radius: 4px;
@@ -165,8 +165,13 @@
   .msg { display: flex; gap: 10px; padding: 7px 16px 9px; }
   .msg__av {
     width: 32px; height: 32px; border-radius: 50%; flex: 0 0 auto;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 12px; font-weight: 700;
+    object-fit: cover;
+  }
+  /* 画面右上の自分のアイコンだけは静的に置いているのでバッジのまま。 */
+  .top__av {
+    width: 22px; height: 22px; border-radius: 50%; background: #4a6f9c;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 9px; font-weight: 700;
   }
   .msg__main { min-width: 0; flex: 1 1 auto; }
   .msg__head { display: flex; align-items: baseline; gap: 8px; }
@@ -236,7 +241,7 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="6" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="18" cy="6" r="1.7"/><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/><circle cx="6" cy="18" r="1.7"/><circle cx="12" cy="18" r="1.7"/><circle cx="18" cy="18" r="1.7"/></svg>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.1"/></svg>
         <span class="top__me">
-          <span class="msg__av" style="width:22px;height:22px;font-size:9px;background:#4a6f9c">山</span>
+          <span class="top__av">山</span>
           山田 太郎
           <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="m4 8 8 9 8-9Z"/></svg>
         </span>
@@ -332,7 +337,7 @@ const messages = [
   m('8', '鈴木 花子', 'a2', '残してください。表記だけ「振込手数料（先方負担）」に変えています。', '7', 88),
 
   m('9', '佐藤 次郎', 'a3', '新しい問い合わせフォーム、ステージング環境に上げました。確認をお願いします。', null, 64),
-  m('10', '高橋 三郎', 'a4', '送信後の完了画面で、戻るボタンが二重に表示されていました。', '9', 47),
+  m('10', '高橋 三郎', 'a4', '送信後の完了画面で、戻るボタンが二重に表示されていました。Windows の Chrome と Edge で再現します。スマートフォンでは出ませんでした。送信自体は成功しているので、表示だけの問題だと思います。', '9', 47),
   m('11', '佐藤 次郎', 'a3', '再現しました。今日中に直します。', '10', 41),
   m('12', '山田 太郎', 'a1', '文言も一箇所だけ旧サービス名のままでした。あわせてお願いします。', '9', 33),
 
@@ -350,6 +355,18 @@ const HUES = {
   r1: 196, r2: 42, r3: 128, r4: 322, r5: 250, r6: 8,
 };
 const color = (seed) => `hsl(${HUES[seed] ?? 205}, 40%, 45%)`;
+
+// アイコン画像。実在の人物の画像は使わず、バッジと同じ配色から SVG を組み立てる。
+// 実物は Chatwork から取得した本人の画像を表示する。
+const avatarUri = (name, aid) => {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">` +
+    `<rect width="64" height="64" fill="${color(aid)}"/>` +
+    `<text x="32" y="43" font-size="30" font-family="sans-serif" fill="#ffffff"` +
+    ` text-anchor="middle">${name.slice(0, 1)}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+for (const x of messages) x.avatarUrl = avatarUri(x.userName, x.accountId);
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
 const stamp = (t) => {
   const d = new Date(t * 1000);
@@ -367,8 +384,9 @@ const el = (tag, cls, text) => {
   return n;
 };
 const avatar = (cls, name, aid, size) => {
-  const n = el('div', cls, name.slice(0, 1));
-  n.style.background = color(aid);
+  const n = el('img', cls);
+  n.src = avatarUri(name, aid);
+  n.alt = '';
   if (size) {
     n.style.width = `${size}px`;
     n.style.height = `${size}px`;
@@ -469,12 +487,24 @@ panel.innerHTML = `
 `;
 shadow.append(style, panel);
 
+// スレッド名は利用者が自分で付けるもの。付いているものと付いていないものを
+// 両方写して、どちらの見え方も伝わるようにする。
+const NAMES = {
+  9: { name: '問い合わせフォームの確認', by: 'user', at: now },
+  6: { name: '請求書テンプレートの更新', by: 'user', at: now },
+};
+
 const threads = buildThreads(messages);
 renderThreads(shadow.querySelector('[data-role="body"]'), threads, {
   hideEmpty: true,
   openIds: new Set(['9']),
+  names: NAMES,
+  // 長い返信を 1 件開いた状態にして、パネル内で全文を読めることを見せる。
+  expandedIds: new Set(['10']),
   onToggle: () => {},
   onJump: () => {},
+  onRename: () => {},
+  onExpand: () => {},
 });
 
 const params = new URLSearchParams(location.search);
