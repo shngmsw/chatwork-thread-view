@@ -1,13 +1,32 @@
+<!--
+  2026-08-31 に Chatwork Web の実機 DOM を調査して作り直した。
+
+  実機で確認した重要な点:
+  - 送信者の data-aid は _speaker > button > div[data-testid="user-icon"] にある。
+    この button に _profileUserIcon クラスは付かない。
+  - 送信者名 (data-testid="timeline_user-name") は _speaker の「外」にある。
+  - 本文の中には、メンションやタスクに紐づく別人のアバターが入る。
+    それらは img.userIconImage や button._profileUserIcon[data-aid] を持ち、
+    クラスに _avatarAid<aid> / _avatarHoverTip を含む。
+    送信者を _speaker に限定せずに探すと、この別人を送信者と取り違える。
+  - 返信チップ (_replyMessage) は pre の内側にあり、data-mid / data-rid を持つ。
+    チップの中にアイコンや data-aid は入らない。
+-->
 <div id="_timeLine">
   <div id="_messageId2141030437437706240" class="sc-hWmCAe cqwzsM _message default"
        data-rid="211028552" data-mid="2141030437437706240" data-index="0"
        data-deleted="0" data-bookmarked="0">
     <div class="sc-jDfjYv cHNVzO">
       <div class="sc-fSjEuY bbVOhw _speaker">
-        <button class="sc-x gfgOUK _profileUserIcon" data-aid="2227949"></button>
-        <img class="sc-y rGzLa userIconImage _avatarAid2227949"
-             src="https://appdata.chatwork.com/avatar/aaa.rsz" alt="羽瀬 由理">
-        <p class="sc-z dqBdeC" data-testid="timeline_user-name">羽瀬 由理</p>
+        <button class="sc-x gfgOUK">
+          <div data-aid="2227949" data-testid="user-icon">
+            <img class="sc-y rGzLa userIconImage"
+                 src="https://appdata.chatwork.com/avatar/aaa.rsz" alt="羽瀬 由理">
+          </div>
+        </button>
+      </div>
+      <div class="sc-name jKlMno">
+        <button class="sc-nameBtn"><p class="sc-z dqBdeC" data-testid="timeline_user-name">羽瀬 由理</p></button>
       </div>
       <div class="sc-l izQjKC _timeStamp" data-tm="1786935026">2026年8月20日 10:30</div>
       <pre class="sc-xyOoZ fhgsfc"><span>親メッセージの本文です。</span></pre>
@@ -19,10 +38,15 @@
        data-deleted="0" data-bookmarked="0">
     <div class="sc-jDfjYv cHNVzO">
       <div class="sc-fSjEuY bbVOhw _speaker">
-        <button class="sc-x gfgOUK _profileUserIcon" data-aid="3261434"></button>
-        <img class="sc-y rGzLa userIconImage _avatarAid3261434"
-             src="https://appdata.chatwork.com/avatar/bbb.rsz" alt="佐藤 太郎">
-        <p class="sc-z dqBdeC" data-testid="timeline_user-name">佐藤 太郎</p>
+        <button class="sc-x gfgOUK">
+          <div data-aid="3261434" data-testid="user-icon">
+            <img class="sc-y rGzLa userIconImage"
+                 src="https://appdata.chatwork.com/avatar/bbb.rsz" alt="佐藤 太郎">
+          </div>
+        </button>
+      </div>
+      <div class="sc-name jKlMno">
+        <button class="sc-nameBtn"><p class="sc-z dqBdeC" data-testid="timeline_user-name">佐藤 太郎</p></button>
       </div>
       <div class="sc-l izQjKC _timeStamp" data-tm="1786935034">2026年8月20日 10:31</div>
       <pre class="sc-xyOoZ fhgsfc"><div class="sc-a hxSJcZ _replyMessage chatTimeLineReply"
@@ -31,12 +55,18 @@
     </div>
   </div>
 
+  <!--
+    連続投稿。_speaker も名前も無い。
+    本文にメンションのホバー用アバター (別人 4882143) が入っており、
+    送信者の探索を _speaker に限定しないとこれを送信者と取り違える。
+  -->
   <div id="_messageId2141041104525852672" class="sc-hWmCAe cqwzsM _message default"
        data-rid="211028552" data-mid="2141041104525852672" data-index="2"
        data-deleted="0" data-bookmarked="0">
     <div class="sc-jDfjYv cHNVzO">
       <div class="sc-l izQjKC _timeStamp" data-tm="1786935099">2026年8月20日 10:32</div>
-      <pre class="sc-xyOoZ fhgsfc"><span>連続投稿。アイコンも名前も無い。</span></pre>
+      <pre class="sc-xyOoZ fhgsfc"><span>連続投稿。アイコンも名前も無い。</span><span class="sc-mention"><button class="sc-x gfgOUK _profileUserIcon" data-aid="4882143"></button><img class="sc-y rGzLa userIconImage _avatarHoverTip _avatarAid4882143"
+             src="https://appdata.chatwork.com/avatar/ccc.rsz" alt="田中 花子"></span></pre>
     </div>
   </div>
 
@@ -53,10 +83,15 @@
        data-deleted="0" data-bookmarked="0">
     <div class="sc-jDfjYv cHNVzO">
       <div class="sc-fSjEuY bbVOhw _speaker">
-        <button class="sc-x gfgOUK _profileUserIcon" data-aid="2227949"></button>
-        <img class="sc-y rGzLa userIconImage _avatarAid2227949"
-             src="https://appdata.chatwork.com/avatar/aaa.rsz" alt="羽瀬 由理">
-        <p class="sc-z dqBdeC" data-testid="timeline_user-name">羽瀬 由理</p>
+        <button class="sc-x gfgOUK">
+          <div data-aid="2227949" data-testid="user-icon">
+            <img class="sc-y rGzLa userIconImage"
+                 src="https://appdata.chatwork.com/avatar/aaa.rsz" alt="羽瀬 由理">
+          </div>
+        </button>
+      </div>
+      <div class="sc-name jKlMno">
+        <button class="sc-nameBtn"><p class="sc-z dqBdeC" data-testid="timeline_user-name">羽瀬 由理</p></button>
       </div>
       <div class="sc-l izQjKC _timeStamp" data-tm="1786935200">2026年8月20日 10:33</div>
       <pre class="sc-xyOoZ fhgsfc"><div class="sc-a hxSJcZ _replyMessage chatTimeLineReply"

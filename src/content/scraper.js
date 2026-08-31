@@ -1,7 +1,5 @@
 import { SEL, UNKNOWN_NAME } from './selectors.js';
 
-const AVATAR_AID = /(?:^|\s)_avatarAid(\d+)(?:\s|$)/;
-
 /**
  * jsdom は innerText を実装しないため textContent を使う。
  * ノーブレークスペースは通常の空白に寄せてから trim する。
@@ -12,16 +10,15 @@ function textOf(el) {
 }
 
 /**
- * 返信チップの内側を除いて、最初に一致した要素を返す。
+ * 本文 (pre) の外側で最初に一致した要素を返す。
  *
- * チップには「返信先ユーザー」のアイコン・名前・data-aid が入っている。
- * 連続投稿では送信者ブロック (_speaker) ごと省略されるため、除外しないと
- * チップ内の返信先ユーザーがメッセージ内で唯一の候補になり、送信者として
- * 採用されてしまう。本文と同じく、送信者情報もチップを見てはいけない。
+ * 送信者名はヘッダにあり、本文の中には入らない。一方、メンション・タスク・
+ * 返信チップといった「別人を指す要素」はすべて本文の内側にある。
+ * この境界で絞ると、別人の名前を送信者名として拾わずに済む。
  */
-function querySender(el, selector) {
+function queryHeader(el, selector) {
   for (const found of el.querySelectorAll(selector)) {
-    if (!found.closest(SEL.replyChip)) return found;
+    if (!found.closest(SEL.body)) return found;
   }
   return null;
 }
@@ -57,20 +54,16 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
     const roomId = el.getAttribute('data-rid') || '';
     const prevAccountId = ctx.lastAccountId;
 
-    // 送信者を指す要素はいずれも返信チップの外から取る (querySender)。
-    let accountId = querySender(el, SEL.profileIcon)?.getAttribute('data-aid') || '';
-    if (!accountId) {
-      const avatarNode = querySender(el, SEL.avatarAidClass);
-      const matched = avatarNode && AVATAR_AID.exec(avatarNode.getAttribute('class') || '');
-      if (matched) accountId = matched[1];
-    }
+    // 送信者は _speaker の内側からだけ取る。本文にはメンションやタスクの
+    // 別人のアバターが入っており、限定しないとそれを送信者と取り違える。
+    let accountId = el.querySelector(SEL.senderAid)?.getAttribute('data-aid') || '';
     if (!accountId) accountId = prevAccountId;
 
     const sameSenderAsPrev = Boolean(accountId) && accountId === prevAccountId;
 
-    const avatarEl = querySender(el, SEL.avatar);
+    const avatarEl = el.querySelector(SEL.avatar);
     let userName =
-      textOf(querySender(el, SEL.userName)) ||
+      textOf(queryHeader(el, SEL.userName)) ||
       (avatarEl?.getAttribute('alt') || '').trim();
     if (userName) {
       if (accountId) ctx.nameByAid.set(accountId, userName);
@@ -88,7 +81,7 @@ export function parseMessage(el, ctx, fallbackIndex = 0) {
     const avatarUrl =
       scrapedAvatar || (accountId && ctx.avatarByAid.get(accountId)) || '';
 
-    const tmAttr = querySender(el, SEL.timeStamp)?.getAttribute('data-tm');
+    const tmAttr = el.querySelector(SEL.timeStamp)?.getAttribute('data-tm');
     const timestamp = tmAttr ? Number(tmAttr) : 0;
 
     // 親メッセージ ID は返信チップの data-mid にある。本文には [rp] が残らない。

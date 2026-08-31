@@ -2,16 +2,24 @@
  * Chatwork の DOM に対する依存を集約したモジュール。
  * 依存してよいのは `_` 接頭辞クラス / data-* / data-testid のみ。
  * styled-components の生成クラス (sc-*, cqwzsM 等) には決して依存しない。
- * 2026-08-29 に Chatwork Web (_v=1.80a) の実機で確認した。
+ * 2026-08-31 に Chatwork Web の実機 DOM で確認した。
+ *
+ * 送信者を指すセレクタは必ず _speaker の内側に限定する。
+ * メッセージ本文にはメンションやタスクに紐づく「別人」のアバターが入り、
+ * それらも img.userIconImage や button._profileUserIcon[data-aid] を持つ。
+ * 限定しないと、連続投稿 (_speaker が省略される) で別人を送信者と取り違える。
  */
 export const SEL = {
   timeline: '#_timeLine',
   message: '._message[data-mid]',
   replyChip: '._replyMessage',
-  profileIcon: 'button._profileUserIcon[data-aid]',
-  avatarAidClass: '[class*="_avatarAid"]',
+  speaker: '._speaker',
+  // 送信者のアカウント ID。_speaker > button > div[data-testid="user-icon"] にある。
+  // この button に _profileUserIcon クラスは付かない (付くのは本文側の別人)。
+  senderAid: '._speaker [data-aid]',
+  // 送信者名は _speaker の外にある。1 メッセージに 1 つだけ。
   userName: '[data-testid="timeline_user-name"]',
-  avatar: 'img.userIconImage',
+  avatar: '._speaker img',
   timeStamp: '._timeStamp',
   body: 'pre',
   appRoot: '#root.root',

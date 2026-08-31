@@ -106,9 +106,10 @@ describe('parseMessage', () => {
   });
 });
 
-// 実機の返信チップは「返信先ユーザー」のアイコンと名前を内側に持つ。
-// フィクスチャのチップは文字だけなので、この状況はここで組み立てる。
-describe('返信チップ内の返信先ユーザーを送信者と取り違えない', () => {
+// 本文の中には別人を指す要素が入る (メンション、タスク、返信チップ)。
+// 連続投稿では _speaker ごと省略されるため、本文を除外しないと
+// そこに居る別人が送信者として採用される。
+describe('本文の中の別人を送信者と取り違えない', () => {
   const SENDER_AID = '1111111';
   const TARGET_AID = '9999999';
 
@@ -119,7 +120,7 @@ describe('返信チップ内の返信先ユーザーを送信者と取り違え�
       <p data-testid="timeline_user-name">${name}</p>
     </div>`;
 
-  // Chatwork は返信チップの中に返信先ユーザーのアイコンと名前を描画する。
+  // 本文に埋まった別人の要素 (アイコン・名前・data-aid)。
   const chip = `
     <div class="_replyMessage" data-rid="R1" data-mid="100">
       <button class="_profileUserIcon" data-aid="${TARGET_AID}"></button>
