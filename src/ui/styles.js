@@ -19,8 +19,8 @@ export const PANEL_CSS = `
   --border: #e3eaea;
   --border-strong: #cfdada;
   --text: #0e1a1b;
-  --text-dim: #5c7173;
-  --text-faint: #8ba0a2;
+  --text-dim: #3f5254;
+  --text-faint: #5c7275;
   --accent: #0f8a83;
   --accent-text: #0b6f69;
   --accent-weak: rgba(15, 138, 131, 0.10);
@@ -38,11 +38,10 @@ export const PANEL_CSS = `
   flex-direction: column;
   background: var(--bg);
   border-left: 1px solid var(--border);
-  font-family: "Hiragino Sans", "Yu Gothic", -apple-system, system-ui, sans-serif;
-  font-size: 13px;
-  line-height: 1.65;
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
   color: var(--text);
-  -webkit-font-smoothing: antialiased;
 }
 .panel[data-theme="dark"] {
   --bg: #10151800;
@@ -53,7 +52,7 @@ export const PANEL_CSS = `
   --border-strong: #35434a;
   --text: #e4ecee;
   --text-dim: #96a8ab;
-  --text-faint: #6f8286;
+  --text-faint: #7e9296;
   --accent: #34b6ab;
   --accent-text: #57c9bf;
   --accent-weak: rgba(52, 182, 171, 0.14);
@@ -292,7 +291,7 @@ export const PANEL_CSS = `
 .thread__preview {
   grid-area: preview;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: 13px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -365,7 +364,7 @@ export const PANEL_CSS = `
   align-items: baseline;
   padding: 5px 12px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   border-radius: var(--radius-sm);
   transition: background var(--ease);
 }
