@@ -175,3 +175,70 @@ describe('スレッド名の表示', () => {
     expect(container.querySelector('.thread__name').textContent).toBe('請求書の件');
   });
 });
+
+describe('スレッド名の編集', () => {
+  const withReply = () =>
+    buildThreads([msg('1', { userName: '三沢慎吾', timestamp: 100 }), reply('2', '1', { timestamp: 200 })]);
+
+  it('鉛筆ボタンを押すと入力欄に変わり、現在の名前が入る', () => {
+    renderThreads(container, withReply(), {
+      hideEmpty: true,
+      onJump: () => {},
+      names: { 1: { name: '請求書の件', by: 'user', at: 10 } },
+      onRename: () => {},
+    });
+    container.querySelector('[data-role="rename"]').click();
+    const input = container.querySelector('[data-role="rename-input"]');
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('請求書の件');
+  });
+
+  it('Enter で onRename が呼ばれる', () => {
+    const onRename = vi.fn();
+    renderThreads(container, withReply(), { hideEmpty: true, onJump: () => {}, onRename });
+    container.querySelector('[data-role="rename"]').click();
+    const input = container.querySelector('[data-role="rename-input"]');
+    input.value = '請求書の件';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(onRename).toHaveBeenCalledWith('1', '請求書の件');
+  });
+
+  it('Esc では onRename を呼ばない', () => {
+    const onRename = vi.fn();
+    renderThreads(container, withReply(), { hideEmpty: true, onJump: () => {}, onRename });
+    container.querySelector('[data-role="rename"]').click();
+    const input = container.querySelector('[data-role="rename-input"]');
+    input.value = '書きかけ';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
+  it('名前があるスレッドでは resolveName が返したキーを渡す', () => {
+    const onRename = vi.fn();
+    const threads = buildThreads([
+      msg('1', { timestamp: 100 }),
+      reply('2', '1', { timestamp: 200 }),
+      reply('3', '2', { timestamp: 300 }),
+    ]);
+    renderThreads(container, threads, {
+      hideEmpty: true,
+      onJump: () => {},
+      names: { 2: { name: '古いキーの名前', by: 'user', at: 10 } },
+      onRename,
+    });
+    container.querySelector('[data-role="rename"]').click();
+    const input = container.querySelector('[data-role="rename-input"]');
+    input.value = '新しい名前';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(onRename).toHaveBeenCalledWith('2', '新しい名前');
+  });
+
+  // summary の中のボタンなので、止めないと details が開閉してしまう。
+  it('鉛筆ボタンのクリックはカードの開閉を起こさない', () => {
+    renderThreads(container, withReply(), { hideEmpty: true, onJump: () => {}, onRename: () => {} });
+    const card = container.querySelector('[data-role="thread"]');
+    const before = card.open;
+    container.querySelector('[data-role="rename"]').click();
+    expect(card.open).toBe(before);
+  });
+});

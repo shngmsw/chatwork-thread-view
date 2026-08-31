@@ -257,6 +257,35 @@ export const PANEL_CSS = `
   margin-left: auto;
   font-variant-numeric: tabular-nums;
 }
+.thread__rename {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ease), color var(--ease), background var(--ease);
+}
+.thread__summary:hover .thread__rename,
+.thread__rename:focus-visible { opacity: 1; }
+.thread__rename:hover { color: var(--accent-text); background: var(--accent-weak); }
+.thread__rename:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.thread__input {
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.thread__input:focus { outline: none; }
 .thread__preview {
   grid-area: preview;
   color: var(--text-dim);

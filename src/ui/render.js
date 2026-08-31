@@ -1,4 +1,4 @@
-import { resolveName } from '../core/threadNames.js';
+import { resolveName, MAX_NAME_LENGTH } from '../core/threadNames.js';
 
 const MAX_PREVIEW = 80;
 
@@ -106,7 +106,7 @@ function buildNode(node, onJump) {
   return wrapper;
 }
 
-function buildCard(thread, onJump, openIds, onToggle, names) {
+function buildCard(thread, onJump, openIds, onToggle, names, onRename) {
   const card = el('details', 'thread');
   card.dataset.role = 'thread';
   card.dataset.rootId = thread.rootId;
@@ -123,6 +123,66 @@ function buildCard(thread, onJump, openIds, onToggle, names) {
     el('span', 'thread__name', resolved ? resolved.name : thread.rootMessage.userName),
     el('span', 'thread__time', formatRelative(thread.updatedAt))
   );
+
+  const nameEl = head.querySelector('.thread__name');
+  const nameKey = resolved ? resolved.key : thread.rootId;
+
+  const renameBtn = el('button', 'thread__rename', '✎');
+  renameBtn.type = 'button';
+  renameBtn.dataset.role = 'rename';
+  renameBtn.setAttribute('aria-label', 'スレッド名を編集');
+
+  function startRename() {
+    if (head.querySelector('[data-role="rename-input"]')) return;
+    const input = el('input', 'thread__input');
+    input.dataset.role = 'rename-input';
+    input.type = 'text';
+    input.maxLength = MAX_NAME_LENGTH;
+    input.value = resolved ? resolved.name : '';
+    input.placeholder = 'スレッド名';
+
+    let settled = false;
+    const commit = () => {
+      if (settled) return;
+      settled = true;
+      // 確定した時点で「編集中」の目印を外す。onRename は再描画を起こすが、
+      // 呼び出し側は編集中の再描画を見送るため、外さないと結果が反映されない。
+      input.dataset.role = 'rename-committed';
+      onRename(nameKey, input.value);
+    };
+    const cancel = () => {
+      if (settled) return;
+      settled = true;
+      input.replaceWith(nameEl);
+    };
+
+    input.addEventListener('keydown', (event) => {
+      // details の中なので、Enter/Space をそのまま通すとカードが開閉する。
+      event.stopPropagation();
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        commit();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        cancel();
+      }
+    });
+    input.addEventListener('click', (event) => event.preventDefault());
+    input.addEventListener('blur', commit);
+
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+  }
+
+  renameBtn.addEventListener('click', (event) => {
+    // summary 内のクリックは details の開閉を起こす。ここで止める。
+    event.preventDefault();
+    event.stopPropagation();
+    startRename();
+  });
+
+  head.appendChild(renameBtn);
 
   const meta = el('div', 'thread__meta');
   meta.appendChild(el('span', 'thread__replies', `返信 ${thread.replyCount} 件`));
@@ -150,10 +210,13 @@ function buildCard(thread, onJump, openIds, onToggle, names) {
  * @param {HTMLElement} container
  * @param {import('../core/types.js').Thread[]} threads
  * @param {{hideEmpty: boolean, onJump: (messageId: string) => void,
- *   openIds?: Set<string>, onToggle?: (rootId: string, open: boolean) => void}} options
+ *   openIds?: Set<string>, onToggle?: (rootId: string, open: boolean) => void,
+ *   names?: import('../core/threadNames.js').NameItems|null,
+ *   onRename?: (key: string, name: string) => void}} options
  */
 export function renderThreads(container, threads, options) {
-  const { hideEmpty, onJump, openIds = null, onToggle = () => {}, names = null } = options;
+  const { hideEmpty, onJump, openIds = null, onToggle = () => {}, names = null,
+    onRename = () => {} } = options;
   container.textContent = '';
 
   if (!threads || threads.length === 0) {
@@ -169,7 +232,7 @@ export function renderThreads(container, threads, options) {
 
   const list = el('div', 'thread-list');
   for (const thread of visible) {
-    list.appendChild(buildCard(thread, onJump, openIds, onToggle, names));
+    list.appendChild(buildCard(thread, onJump, openIds, onToggle, names, onRename));
   }
   container.appendChild(list);
 }

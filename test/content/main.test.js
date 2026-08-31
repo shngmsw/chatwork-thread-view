@@ -198,3 +198,32 @@ describe('ツールバーのアイコンからの開閉', () => {
     expect(() => main.listenForToggle({})).not.toThrow();
   });
 });
+
+describe('スレッド名の編集', () => {
+  const shadowOf = () => main.getPanel().shadow;
+
+  it('編集中の再描画で入力欄と書きかけの内容を壊さない', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+    shadowOf().querySelector('[data-role="rename"]').click();
+    const input = shadowOf().querySelector('[data-role="rename-input"]');
+    input.value = '書きかけの名前';
+
+    // Chatwork の新着で observer が走った状況。
+    main.refresh();
+
+    expect(shadowOf().querySelector('[data-role="rename-input"]')).toBe(input);
+    expect(input.value).toBe('書きかけの名前');
+  });
+
+  it('確定するとカード見出しに名前が出る', async () => {
+    document.body.innerHTML = FIXTURE;
+    await boot();
+    shadowOf().querySelector('[data-role="rename"]').click();
+    const input = shadowOf().querySelector('[data-role="rename-input"]');
+    input.value = '請求書フォーマットの件';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(shadowOf().querySelector('.thread__name').textContent).toBe('請求書フォーマットの件');
+  });
+});
