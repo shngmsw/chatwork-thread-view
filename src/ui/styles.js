@@ -284,6 +284,13 @@ export const PANEL_CSS = `
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+.thread__owner {
+  color: var(--text-dim);
+  max-width: 10em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .thread__badge {
   color: var(--warn-text);
   background: var(--warn-bg);

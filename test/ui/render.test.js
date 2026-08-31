@@ -135,3 +135,43 @@ describe('renderThreads', () => {
     expect(container.querySelector('[data-role="thread"]').open).toBe(false);
   });
 });
+
+describe('スレッド名の表示', () => {
+  it('名前があれば見出しに名前を出し、送信者名をメタ行へ降ろす', () => {
+    const threads = buildThreads([
+      msg('1', { userName: '三沢慎吾', timestamp: 100 }),
+      reply('2', '1', { timestamp: 200 }),
+    ]);
+    renderThreads(container, threads, {
+      hideEmpty: true,
+      onJump: () => {},
+      names: { 1: { name: '請求書フォーマットの件', by: 'user', at: 10 } },
+    });
+    expect(container.querySelector('.thread__name').textContent).toBe('請求書フォーマットの件');
+    expect(container.querySelector('.thread__owner').textContent).toBe('三沢慎吾');
+  });
+
+  it('名前が無ければ従来どおり送信者名を見出しにする', () => {
+    const threads = buildThreads([
+      msg('1', { userName: '三沢慎吾', timestamp: 100 }),
+      reply('2', '1', { timestamp: 200 }),
+    ]);
+    renderThreads(container, threads, { hideEmpty: true, onJump: () => {} });
+    expect(container.querySelector('.thread__name').textContent).toBe('三沢慎吾');
+    expect(container.querySelector('.thread__owner')).toBeNull();
+  });
+
+  it('root が入れ替わっても子孫に残った名前を見出しに出す', () => {
+    const threads = buildThreads([
+      msg('1', { timestamp: 100 }),
+      reply('2', '1', { timestamp: 200 }),
+      reply('3', '2', { timestamp: 300 }),
+    ]);
+    renderThreads(container, threads, {
+      hideEmpty: true,
+      onJump: () => {},
+      names: { 2: { name: '請求書の件', by: 'user', at: 10 } },
+    });
+    expect(container.querySelector('.thread__name').textContent).toBe('請求書の件');
+  });
+});

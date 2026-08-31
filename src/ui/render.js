@@ -1,3 +1,5 @@
+import { resolveName } from '../core/threadNames.js';
+
 const MAX_PREVIEW = 80;
 
 function truncate(text, max = MAX_PREVIEW) {
@@ -104,7 +106,7 @@ function buildNode(node, onJump) {
   return wrapper;
 }
 
-function buildCard(thread, onJump, openIds, onToggle) {
+function buildCard(thread, onJump, openIds, onToggle, names) {
   const card = el('details', 'thread');
   card.dataset.role = 'thread';
   card.dataset.rootId = thread.rootId;
@@ -114,14 +116,18 @@ function buildCard(thread, onJump, openIds, onToggle) {
 
   const summary = el('summary', 'thread__summary');
 
+  const resolved = resolveName(thread, names);
+
   const head = el('div', 'thread__head');
   head.append(
-    el('span', 'thread__name', thread.rootMessage.userName),
+    el('span', 'thread__name', resolved ? resolved.name : thread.rootMessage.userName),
     el('span', 'thread__time', formatRelative(thread.updatedAt))
   );
 
   const meta = el('div', 'thread__meta');
   meta.appendChild(el('span', 'thread__replies', `返信 ${thread.replyCount} 件`));
+  // 名前をつけたら見出しの席は名前に譲り、送信者名はここへ降りる。
+  if (resolved) meta.appendChild(el('span', 'thread__owner', thread.rootMessage.userName));
   if (thread.rootIsSynthetic) {
     meta.appendChild(el('span', 'thread__badge', '親メッセージ未読み込み'));
   }
@@ -147,7 +153,7 @@ function buildCard(thread, onJump, openIds, onToggle) {
  *   openIds?: Set<string>, onToggle?: (rootId: string, open: boolean) => void}} options
  */
 export function renderThreads(container, threads, options) {
-  const { hideEmpty, onJump, openIds = null, onToggle = () => {} } = options;
+  const { hideEmpty, onJump, openIds = null, onToggle = () => {}, names = null } = options;
   container.textContent = '';
 
   if (!threads || threads.length === 0) {
@@ -163,7 +169,7 @@ export function renderThreads(container, threads, options) {
 
   const list = el('div', 'thread-list');
   for (const thread of visible) {
-    list.appendChild(buildCard(thread, onJump, openIds, onToggle));
+    list.appendChild(buildCard(thread, onJump, openIds, onToggle, names));
   }
   container.appendChild(list);
 }
